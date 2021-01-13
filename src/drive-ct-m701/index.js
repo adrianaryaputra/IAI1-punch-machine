@@ -29,7 +29,9 @@ module.exports = class {
         }
         console.log(this.serialPort);
         this.modbusClient = new ModbusRTU(this.serialPort);
+        console.log("init",this.modbusClient);
         let open = util.promisify(this.modbusClient.open); await open();
+        console.log("open",this.modbusClient);
         this.modbusClient.setID(this.id);
         this.modbusClient.setTimeout(this.timeout);
     }
