@@ -28,7 +28,7 @@
 
 // ============
 
-const SerialHandler = require('../serial-handler');
+const SerialHandler = require('./serial-handler');
 const ModbusRTU = require("modbus-serial");
 const client = new ModbusRTU();
 client.connect()
