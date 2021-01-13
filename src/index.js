@@ -11,7 +11,7 @@ drive = new Drive_CT_M701({
 });
 
 drive.connect(() => {
-    drive.readParameter()
+    drive.readParameter({menu:1, parameter:21, length:1})
         .then(console.log)
         .catch(console.error)
 })
