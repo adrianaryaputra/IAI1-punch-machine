@@ -27,6 +27,7 @@ module.exports = class {
             if(this.serialPnpId) this.serialHandler.filterByPnpId(this.serialPnpId);
             this.serialPort = this.serialHandler.get();
         }
+        console.log(this.serialPort);
         this.modbusClient = new ModbusRTU(this.serialPort);
         let open = util.promisify(this.modbusClient.open); await open();
         this.modbusClient.setID(this.id);
