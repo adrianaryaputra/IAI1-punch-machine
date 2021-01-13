@@ -1,20 +1,20 @@
-const Drive_CT_M701 = require('./drive-ct-m701');
+// const Drive_CT_M701 = require('./drive-ct-m701');
 
 
-drive = new Drive_CT_M701({
-    serialManufacturer: '1a86',
-    serialConfig: {
-        autoOpen: false,
-        baudRate: 19200,
-    },
-    modbusId: 1,
-});
+// drive = new Drive_CT_M701({
+//     serialManufacturer: '1a86',
+//     serialConfig: {
+//         autoOpen: false,
+//         baudRate: 19200,
+//     },
+//     modbusId: 1,
+// });
 
-drive.connect(() => {
-    drive.readParameter({menu:1, parameter:21, length:1})
-        .then(console.log)
-        .catch(console.error)
-})
+// drive.connect(() => {
+//     drive.readParameter({menu:1, parameter:21, length:1})
+//         .then(console.log)
+//         .catch(console.error)
+// })
 
 // drive.connect()
 //     .then(() => {
@@ -28,23 +28,23 @@ drive.connect(() => {
 
 // ============
 
-// const SerialHandler = require('../serial-handler');
-// const ModbusRTU = require("modbus-serial");
-// const client = new ModbusRTU();
-// client.connect()
-// client.connectRTUBuffered("/dev/ttyUSB0", { baudRate: 19200 });
+const SerialHandler = require('../serial-handler');
+const ModbusRTU = require("modbus-serial");
+const client = new ModbusRTU();
+client.connect()
+client.connectRTUBuffered("/dev/ttyUSB0", { baudRate: 19200 });
 
-// setInterval(() => {
-//     read();
-// }, 1000)
+setInterval(() => {
+    read();
+}, 1000)
  
-// function read() {
-//     client.setID(1);
-//     client.readHoldingRegisters(120, 1).then(console.log);
-// }
+function read() {
+    client.setID(1);
+    client.readHoldingRegisters(120, 1).then(console.log);
+}
 
-// function write() {
-//     client.setID(1);
-//     client.writeRegister(120, 16000).then(read);
-// }
+function write() {
+    client.setID(1);
+    client.writeRegister(120, 16000).then(read);
+}
 
