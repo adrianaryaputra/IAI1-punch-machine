@@ -26,13 +26,11 @@
 
 
 
-// ============
-
-const SerialHandler = require('./serial-handler');
+const SerialPort = require('serialport');
 const ModbusRTU = require("modbus-serial");
-const client = new ModbusRTU();
-client.connect()
-client.connectRTUBuffered("/dev/ttyUSB0", { baudRate: 19200 });
+const serialPort = new SerialPort("/dev/ttyUSB0", { baudRate: 19200 });
+const client = new ModbusRTU(serialPort);
+client.open()
 
 setInterval(() => {
     read();
