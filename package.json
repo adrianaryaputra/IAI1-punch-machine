@@ -1,0 +1,16 @@
+{
+  "name": "iai1-punch-machine",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node ./src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "ad",
+  "license": "ISC",
+  "dependencies": {
+    "modbus-serial": "^8.0.1",
+    "serialport": "^9.0.4"
+  }
+}
