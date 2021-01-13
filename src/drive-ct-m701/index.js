@@ -20,7 +20,7 @@ module.exports = class {
         this.timeout = modbusTimeout;
     }
 
-    async connect() {
+    async connect(callback) {
         if(this.serialPort === undefined){
             await this.serialHandler.init();
             if(this.serialManufacturer) this.serialHandler.filterByManufacturer(this.serialManufacturer);
@@ -29,9 +29,7 @@ module.exports = class {
         }
         console.log(this.serialPort);
         this.modbusClient = new ModbusRTU(this.serialPort);
-        console.log("init",this.modbusClient);
-        let open = util.promisify(this.modbusClient.open); await open();
-        console.log("open",this.modbusClient);
+        this.modbusClient.open(callback)
         this.modbusClient.setID(this.id);
         this.modbusClient.setTimeout(this.timeout);
     }

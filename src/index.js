@@ -10,13 +10,19 @@ drive = new Drive_CT_M701({
     modbusId: 1,
 });
 
-drive.connect()
-    .then(() => {
-        drive.readParameter()
-            .then(console.log)
-            .catch(console.error)
-    })
-    .catch(console.error)
+drive.connect(() => {
+    drive.readParameter()
+        .then(console.log)
+        .catch(console.error)
+})
+
+// drive.connect()
+//     .then(() => {
+//         drive.readParameter()
+//             .then(console.log)
+//             .catch(console.error)
+//     })
+//     .catch(console.error)
 
 
 
