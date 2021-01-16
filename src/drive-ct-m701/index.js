@@ -1,35 +1,34 @@
-const SerialHandler = require('../serial-handler');
-const ModbusRTU = require("modbus-serial");
-const util = require('util');
 
-module.exports = class {
+// USAGE EXAMPLE:
+
+// drive = new Drive_CT_M701({
+//     modbusClient: client,
+//     modbusId: 1,
+//     modbusTimeout: 500,
+// });
+
+// drive.writeParameter({
+//     menu: 18,
+//     parameter:31,
+//     value: runValue,
+// })
+//     .then(console.log)
+//     .catch(console.error)
+
+module.exports = class Drive_CT_M701{
 
     constructor({
-        serialManufacturer,
-        serialPnpId,
-        serialPort,
-        serialConfig = {},
+        modbusClient,
         modbusId = 1,
         modbusTimeout = 500,
     }){
-        this.serialManufacturer = serialManufacturer;
-        this.serialPnpId = serialPnpId;
-        this.serialPort = serialPort;
-        this.serialHandler = new SerialHandler(serialConfig);
         this.id = modbusId;
         this.timeout = modbusTimeout;
+        if(modbusClient) this.setClient(modbusClient);
     }
 
-    async connect(callback) {
-        if(this.serialPort === undefined){
-            await this.serialHandler.init();
-            if(this.serialManufacturer) this.serialHandler.filterByManufacturer(this.serialManufacturer);
-            if(this.serialPnpId) this.serialHandler.filterByPnpId(this.serialPnpId);
-            this.serialPort = this.serialHandler.get();
-        }
-        console.log(this.serialPort);
-        this.modbusClient = new ModbusRTU(this.serialPort);
-        this.modbusClient.open(callback)
+    setClient(client) {
+        this.modbusClient = client;
         this.modbusClient.setID(this.id);
         this.modbusClient.setTimeout(this.timeout);
     }
@@ -39,15 +38,22 @@ module.exports = class {
     }
 
     async readParameter({menu, parameter, length=1}) {
-        return this.modbusClient.readHoldingRegisters(this._findAddress({menu, parameter}), length)
+        return this.modbusClient.readHoldingRegisters(this.findAddress({menu, parameter}), length)
     }
 
     async writeParameter({menu, parameter, value}) {
-        await this.modbusClient.writeRegister(this._findAddress({menu, parameter, length:1}), value)
-        return this.readParameter(menu, parameter)
+        return this.modbusClient.writeRegister(this.findAddress({menu, parameter, length:1}), value)
     }
 
-    _findAddress({menu, parameter}) {
+    async saveParameter() {
+        return this.modbusClient.writeRegister(this.findAddress({menu:10, parameter:0}), 1001);
+    }
+
+    async reset() {
+        return this.modbusClient.writeRegister(this.findAddress({menu:10, parameter:33}), 1);
+    }
+
+    findAddress({menu, parameter}) {
         return (menu * 100) + (parameter - 1)
     }
 

@@ -10,7 +10,10 @@ module.exports = class SerialHandler{
 
     constructor(settings = {}){
         this._SerialPort = SerialPort;
-        this.settings = settings;
+        this.settings = {
+            ...settings,
+            autoOpen: false,
+        };
         this.serialList = new Array();
     }
 

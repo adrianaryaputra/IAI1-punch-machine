@@ -10,7 +10,9 @@
   "author": "ad",
   "license": "ISC",
   "dependencies": {
+    "express": "^4.17.1",
     "modbus-serial": "^8.0.1",
-    "serialport": "^9.0.4"
+    "serialport": "^9.0.4",
+    "ws": "^7.4.2"
   }
 }
