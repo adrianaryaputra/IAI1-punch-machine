@@ -114,7 +114,7 @@ function generateGUI() {
                 blurListener: () => {
                     console.log(formLen.get("count"), formLen.parse("count"));
                     if(formLen.parse("count")){
-                        ws_send(WS.SET_COUNT, formLen.get("count"));
+                        ws_send(WS.SET_COUNT, parseInt(formLen.get("count")));
                     }
                 }
             }
@@ -280,6 +280,12 @@ function generateGUI() {
     // pubsub
     pubsub.subscribe(PUBSUB.LENGTH, (msg) => formLen.set({length: [msg], feedLength: [msg]}));
     pubsub.subscribe(PUBSUB.SPEED, (msg) => formLen.set({speed: [msg]}));
+    pubsub.subscribe(PUBSUB.COUNT, (msg) => formLen.set({count: [msg]}));
+
+    pubsub.subscribe(PUBSUB.STATUS_RECOILER, (msg) => indicatorRecoiler.set(msg));
+    pubsub.subscribe(PUBSUB.STATUS_LEVELER, (msg) => indicatorLeveler.set(msg));
+    pubsub.subscribe(PUBSUB.STATUS_COILER, (msg) => indicatorCoiler.set(msg));
+    pubsub.subscribe(PUBSUB.STATUS_FEEDER, (msg) => indicatorFeeder.set(msg));
 
     pubsub.subscribe(PUBSUB.THREAD_FWD, (msg) => buttonThreadFwd.active(msg));
     pubsub.subscribe(PUBSUB.THREAD_REV, (msg) => buttonThreadRev.active(msg));
@@ -294,6 +300,11 @@ function getCurrentValue() {
     console.log("get current value");
     setTimeout(() => ws_send(WS.GET_LENGTH, true), 100);
     setTimeout(() => ws_send(WS.GET_SPEED, true), 200);
+    ws_send(WS.GET_RECOILER, true);
+    ws_send(WS.GET_LEVELER, true);
+    ws_send(WS.GET_COILER, true);
+    ws_send(WS.GET_FEEDER, true);
+    ws_send(WS.GET_COUNT, true);
 }
 
 
@@ -325,6 +336,26 @@ function ws_onMessage(evt) {
     let parsedEvt = JSON.parse(evt.data);
     console.log(parsedEvt);
     switch(parsedEvt.command){
+        case WS.GET_RECOILER:
+            pubsub.publish(PUBSUB.STATUS_RECOILER, parsedEvt.value);
+            break;
+
+        case WS.GET_LEVELER:
+            pubsub.publish(PUBSUB.STATUS_LEVELER, parsedEvt.value);
+            break;
+
+        case WS.GET_COILER:
+            pubsub.publish(PUBSUB.STATUS_COILER, parsedEvt.value);
+            break;
+
+        case WS.GET_FEEDER:
+            pubsub.publish(PUBSUB.STATUS_FEEDER, parsedEvt.value);
+            break;
+
+        case WS.GET_COUNT:
+            pubsub.publish(PUBSUB.COUNT, parsedEvt.value);
+            break;
+
         case WS.GET_LENGTH:
             pubsub.publish(PUBSUB.LENGTH, parsedEvt.value);
             break;
@@ -383,6 +414,13 @@ const PUBSUB = {
 }
 
 const WS = {
+    GET_RECOILER: 'Recoiler',
+    GET_LEVELER: 'Leveller',
+    GET_COILER: 'Coiler',
+    GET_FEEDER: 'Feeder',
+    GET_PUNCHING: 'Punching',
+    GET_FEEDING: 'Feeding',
+
     SET_LENGTH: "set_length",
     SET_FEED_LENGTH: "set_feedlength",
     SET_SPEED: "set_speed",

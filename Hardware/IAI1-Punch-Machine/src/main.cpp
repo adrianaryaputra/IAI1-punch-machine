@@ -11,6 +11,15 @@ int inputPin[] = {13, 12, 11, 10, A5, A4, A3, A2, A1, A0};
 bool lastState[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 uint64_t pulseTimer[] = {0, 0};
 
+String command[] = {
+  "Recoiler",
+  "Leveller",
+  "Coiler",
+  "Feeder",
+  "Punching", // untuk count
+  "Feeding" // untuk perintah jalan drive
+};
+
 bool runningMode = MODE_SINGLE;
 
 // fn
@@ -88,8 +97,9 @@ void pulseStateChange(int inputPin, bool *lastState, uint64_t *pulseTimer, bool 
 }
 
 void handleStatusChange(int index, bool output) {
-  Serial.print("index: ");
-  Serial.print(index);
-  Serial.print(" value: ");
-  Serial.println(output);
+  Serial.print("{\"command\": \"");
+  Serial.print(command[index]);
+  Serial.print("\" ,\"value\": ");
+  Serial.print(!output);
+  Serial.println("}");
 }

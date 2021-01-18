@@ -1,6 +1,8 @@
 const cfg = require('./config');
 
 const SerialHandler = require('./serial-handler');
+const Readl = require('@serialport/parser-readline');
+
 const ModbusRTU = require("modbus-serial");
 const Drive_CT_M701 = require("./drive-ct-m701");
 
@@ -21,15 +23,42 @@ drive = new Drive_CT_M701({
 
 run();
 
+state = {
+    recoiler: 0,
+    leveler: 0,
+    coiler: 0,
+    feeder: 0,
+    count: 0,
+    mode: 0,
+}
+
 
 async function run() {
+
+    try {
+        arduinoSerialHandler = await new SerialHandler({baudRate: cfg.ARDUINO_BAUDRATE}).init();
+        arduinoPort = arduinoSerialHandler.filterByManufacturer(cfg.ARDUINO_SERIALNAME).get();
+        arduinoPort.open(() => {
+            console.log("arduino port OPEN");
+        })
+    } catch(e) { handleErrorCommand(e) }
+
     try {
         modbusSerialHandler = await new SerialHandler({baudRate: cfg.MODBUS_BAUD}).init();
-        serialPort = modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
-        const client = new ModbusRTU(serialPort);
+        modbusPort = modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
+        client = new ModbusRTU(modbusPort);
         client.open();
         drive.setClient(client);
     } catch(e) { handleErrorCommand(e) }
+
+    let arduinoStream = arduinoPort.pipe(new Readl());
+
+    arduinoStream.on('data', (data) => {
+        console.log(data);
+        parsedData = JSON.parse(data);
+        console.log(parsedData);
+        handleArduinoMessage(parsedData);
+    });
 
     wss.on('connection', (ws) => {
         ws.on('open', function open() {
@@ -77,6 +106,31 @@ function handleErrorCommand(err) {
 function handleWebsocketMessage(msg) {
     try {
         switch(msg.command){
+            case WS.GET_RECOILER:
+                handleSendWebsocket({
+                    command: WS.GET_RECOILER,
+                    value: state.recoiler,
+                });
+                break;
+            case WS.GET_LEVELER:
+                handleSendWebsocket({
+                    command: WS.GET_LEVELER,
+                    value: state.leveler,
+                });
+                break;
+            case WS.GET_COILER:
+                handleSendWebsocket({
+                    command: WS.GET_COILER,
+                    value: state.coiler,
+                });
+                break;
+            case WS.GET_FEEDER:
+                handleSendWebsocket({
+                    command: WS.GET_FEEDER,
+                    value: state.feeder,
+                });
+                break;
+
             case WS.GET_DISTANCE_MOTOR_TURN:
                 handleDefaultGetCommand(MODBUS.DISTANCE_MOTOR_TURN, WS.GET_DISTANCE_MOTOR_TURN);
                 break;
@@ -105,6 +159,10 @@ function handleWebsocketMessage(msg) {
                 handleScaledGetCommand(MODBUS.SPEED, 0.5, WS.GET_SPEED);
                 break;
             case WS.GET_COUNT:
+                handleSendWebsocket({
+                    command: WS.GET_COUNT,
+                    value: state.count,
+                });
                 break;
 
 
@@ -136,6 +194,7 @@ function handleWebsocketMessage(msg) {
                 handleScaledSetCommand(MODBUS.SPEED, 0.5, WS.SET_SPEED, msg.value);
                 break;
             case WS.SET_COUNT:
+                state.count = msg.value;
                 break;
             case WS.SET_THREAD_REVERSE:
                 handleThreadRevCommand();
@@ -253,6 +312,62 @@ async function handleThreadRevCommand() {
 
 }
 
+
+function handleArduinoMessage(data) {
+    switch(data.command) {
+        case ARDUINO.RECOILER:
+            state.recoiler = data.value;
+            handleSendWebsocket({
+                command: ARDUINO.RECOILER,
+                value: state.recoiler,
+            });
+            break;
+        case ARDUINO.LEVELER:
+            state.leveler = data.value;
+            handleSendWebsocket({
+                command: ARDUINO.LEVELER,
+                value: state.leveler,
+            });
+            break;
+        case ARDUINO.COILER:
+            state.coiler = data.value;
+            handleSendWebsocket({
+                command: ARDUINO.COILER,
+                value: state.coiler,
+            });
+            break;
+        case ARDUINO.FEEDER:
+            state.feeder = data.value;
+            handleSendWebsocket({
+                command: ARDUINO.FEEDER,
+                value: state.feeder,
+            });
+            break;
+        case ARDUINO.PUNCHING:
+            state.count += 1
+            handleSendWebsocket({
+                command: WS.GET_COUNT,
+                value: state.count,
+            });
+            break;
+    }
+}
+
+
+const RUNMODE = {
+    SINGLE: 0,
+    MULTI: 1,
+}
+
+const ARDUINO = {
+    RECOILER: 'Recoiler',
+    LEVELER: 'Leveller',
+    COILER: 'Coiler',
+    FEEDER: 'Feeder',
+    PUNCHING: 'Punching',
+    FEEDING: 'Feeding',
+}
+
 const MODBUS = {
     LENGTH: { menu:18, parameter:52},
     SPEED: {menu:18, parameter:13},
@@ -270,6 +385,13 @@ const MODBUS = {
 
 
 const WS = {
+    GET_RECOILER: ARDUINO.RECOILER,
+    GET_LEVELER: ARDUINO.LEVELER,
+    GET_COILER: ARDUINO.COILER,
+    GET_FEEDER: ARDUINO.FEEDER,
+    GET_PUNCHING: ARDUINO.PUNCHING,
+    GET_FEEDING: ARDUINO.FEEDING,
+
     SET_LENGTH: "set_length",
     SET_SPEED: "set_speed",
     SET_COUNT: "set_count",
