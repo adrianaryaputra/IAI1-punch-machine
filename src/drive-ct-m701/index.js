@@ -33,16 +33,12 @@ module.exports = class Drive_CT_M701{
         this.modbusClient.setTimeout(this.timeout);
     }
 
-    isconnected() {
-        return this.modbusClient.isOpen();
-    }
-
     async readParameter({menu, parameter, length=1}) {
         return this.modbusClient.readHoldingRegisters(this.findAddress({menu, parameter}), length)
     }
 
     async writeParameter({menu, parameter, value}) {
-        return this.modbusClient.writeRegister(this.findAddress({menu, parameter, length:1}), value)
+        return this.modbusClient.writeRegister(this.findAddress({menu, parameter}), value)
     }
 
     async saveParameter() {
@@ -50,7 +46,10 @@ module.exports = class Drive_CT_M701{
     }
 
     async reset() {
-        return this.modbusClient.writeRegister(this.findAddress({menu:10, parameter:33}), 1);
+        await this.modbusClient.writeRegister(this.findAddress({menu:10, parameter:33}), 1);
+        setTimeout(() => {
+            this.modbusClient.writeRegister(this.findAddress({menu:10, parameter:33}), 0)
+        }, 1000);
     }
 
     findAddress({menu, parameter}) {

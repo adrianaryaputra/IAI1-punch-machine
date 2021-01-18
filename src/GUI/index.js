@@ -1,10 +1,13 @@
-import {ClickableButton} from './elements/button.js'
-import {FormElement} from './elements/form.js'
-import {Holder} from './elements/holder.js'
-import { Indicator } from './elements/indicator.js';
+import {ClickableButton} from './elements/button/index.js'
+import {FormElement} from './elements/form/index.js'
+import {Holder} from './elements/holder/index.js'
+import {Indicator} from './elements/indicator/index.js'
+import {MessageViewer} from './elements/message/index.js'
+import {PubSub} from './pubsub/index.js'
 
 var wsUri = `ws://${location.hostname}:${+location.port+1}`;
 var websocket = new WebSocket(wsUri);
+var pubsub = new PubSub();
 
 function generateGUI() {
 
@@ -266,39 +269,33 @@ function generateGUI() {
         parent: holderCommand.element(),
         text: "Setting",
         style: buttonStyle,
-        callback: () => {console.log("setting")}
+        callback: () => {
+            location.href = '/setup.html'
+        }
     });
 
-    // let length = new TextBox({
-    //     label: 'Test',
-    //     type: 'datetime',
-    //     inputListener: () => {
-    //         console.log(length.get());
-    //     }
-    // });
+    let messageHandle = new MessageViewer({ parent: document.body });
 
-    // length.set("2020-12-12 09:55");
+
+    // pubsub
+    pubsub.subscribe(PUBSUB.LENGTH, (msg) => formLen.set({length: [msg], feedLength: [msg]}));
+    pubsub.subscribe(PUBSUB.SPEED, (msg) => formLen.set({speed: [msg]}));
+
+    pubsub.subscribe(PUBSUB.THREAD_FWD, (msg) => buttonThreadFwd.active(msg));
+    pubsub.subscribe(PUBSUB.THREAD_REV, (msg) => buttonThreadRev.active(msg));
+
+    pubsub.subscribe(PUBSUB.MESSAGE_SUCCESS, (msg) => messageHandle.success(msg.text, msg.duration));
+    pubsub.subscribe(PUBSUB.MESSAGE_WARNING, (msg) => messageHandle.warning(msg.text, msg.duration));
+    pubsub.subscribe(PUBSUB.MESSAGE_ERROR, (msg) => messageHandle.error(msg.text, msg.duration));
 }
 
-const WS = {
-    SET_LENGTH: "set_length",
-    SET_FEED_LENGTH: "set_feedlength",
-    SET_SPEED: "set_speed",
-    SET_COUNT: "set_count",
-    GET_LENGTH: "get_length",
-    GET_FEED_LENGTH: "get_feedlength",
-    GET_SPEED: "get_speed",
-    GET_COUNT: "get_count",
-    GET_INDICATOR: "get_indicator",
-    SET_THREAD_FORWARD: "set_threadfwd",
-    SET_THREAD_REVERSE: "set_threadrev",
-    GET_THREAD_FORWARD: "get_threadfwd",
-    GET_THREAD_REVERSE: "get_threadrev",
-    SET_MODE_SINGLE: "set_modesingle",
-    SET_MODE_MULTI: "set_modemulti",
-    GET_MODE_MULTI: "get_modemulti",
-    RESET_DRIVE: "reset",
+
+function getCurrentValue() {
+    console.log("get current value");
+    setTimeout(() => ws_send(WS.GET_LENGTH, true), 100);
+    setTimeout(() => ws_send(WS.GET_SPEED, true), 200);
 }
+
 
 function ws_load() {
     websocket.onopen = function(evt) { ws_onOpen(evt) };
@@ -315,8 +312,7 @@ function ws_send(command, value) {
 }
       
 function ws_onOpen(evt) {
-    console.log(`WS: ${evt.type}`);
-    console.log(evt.data);
+    getCurrentValue();
 }
       
 function ws_onClose(evt) {
@@ -326,7 +322,33 @@ function ws_onClose(evt) {
       
 function ws_onMessage(evt) {
     console.log(`WS: ${evt.type}`);
-    console.log(evt.data);
+    let parsedEvt = JSON.parse(evt.data);
+    console.log(parsedEvt);
+    switch(parsedEvt.command){
+        case WS.GET_LENGTH:
+            pubsub.publish(PUBSUB.LENGTH, parsedEvt.value);
+            break;
+
+        case WS.GET_SPEED:
+            pubsub.publish(PUBSUB.SPEED, parsedEvt.value);
+            break;
+    
+        case WS.SET_THREAD_FORWARD:
+            pubsub.publish(PUBSUB.THREAD_FWD, parsedEvt.value);
+            break;
+
+        case WS.SET_THREAD_REVERSE:
+            pubsub.publish(PUBSUB.THREAD_REV, parsedEvt.value);
+            break;
+
+        case WS.COMM_SUCCESS:
+            pubsub.publish(PUBSUB.MESSAGE_SUCCESS, {text: "success changing data", duration: 1});
+            break;
+
+        case WS.COMM_ERROR:
+            pubsub.publish(PUBSUB.MESSAGE_ERROR, {text: parsedEvt.value, duration: 5});
+            break;
+    }
 }
       
 function ws_onError(evt) {
@@ -338,3 +360,50 @@ document.addEventListener('DOMContentLoaded', () => {
     ws_load();
     generateGUI();
 });
+
+const PUBSUB = {
+    MESSAGE_SUCCESS: "msg-success",
+    MESSAGE_WARNING: "msg-warning",
+    MESSAGE_ERROR: "msg-error",
+
+    THREAD_FWD: "thread-fwd",
+    THREAD_REV: "thread-rev",
+
+    LENGTH: "gui-length",
+    SPEED: "gui-speed",
+    COUNT: "gui-count",
+
+    STATUS_RECOILER: "status-recoiler",
+    STATUS_LEVELER: "status-leveler",
+    STATUS_COILER: "status-coiler",
+    STATUS_FEEDER: "status-feeder",
+
+    MODE_SINGLE: "mode-single",
+    MODE_MULTI: "mode-multi",
+}
+
+const WS = {
+    SET_LENGTH: "set_length",
+    SET_FEED_LENGTH: "set_feedlength",
+    SET_SPEED: "set_speed",
+    SET_COUNT: "set_count",
+    SET_THREAD_FORWARD: "set_threadfwd",
+    SET_THREAD_REVERSE: "set_threadrev",
+    SET_MODE_SINGLE: "set_modesingle",
+    SET_MODE_MULTI: "set_modemulti",
+
+    GET_LENGTH: "get_length",
+    GET_FEED_LENGTH: "get_feedlength",
+    GET_SPEED: "get_speed",
+    GET_COUNT: "get_count",
+    GET_INDICATOR: "get_indicator",
+    GET_THREAD_FORWARD: "get_threadfwd",
+    GET_THREAD_REVERSE: "get_threadrev",
+    GET_MODE_MULTI: "get_modemulti",
+
+    SAVE_PARAMETER: "save",
+    RESET_DRIVE: "reset",
+
+    COMM_SUCCESS: "com_success",
+    COMM_ERROR: "com_error",
+}

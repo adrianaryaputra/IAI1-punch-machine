@@ -30,6 +30,14 @@ export class ClickableButton{
         }
     }
 
+    active(cond) {
+        if(cond == 1){
+            this.elem.style.backgroundColor = "#0F0";
+        } else {
+            this.elem.style.backgroundColor = this.color;
+        }
+    }
+
     element() {
         return this.elem;
     }
