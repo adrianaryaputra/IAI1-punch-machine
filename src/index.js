@@ -40,7 +40,14 @@ async function run() {
         arduinoPort = arduinoSerialHandler.filterByManufacturer(cfg.ARDUINO_SERIALNAME).get();
         arduinoPort.open(() => {
             console.log("arduino port OPEN");
-        })
+        });
+        let arduinoStream = arduinoPort.pipe(new Readl());
+        arduinoStream.on('data', (data) => {
+            console.log(data);
+            parsedData = JSON.parse(data);
+            console.log(parsedData);
+            handleArduinoMessage(parsedData);
+        });
     } catch(e) { handleErrorCommand(e) }
 
     try {
@@ -50,15 +57,6 @@ async function run() {
         client.open();
         drive.setClient(client);
     } catch(e) { handleErrorCommand(e) }
-
-    let arduinoStream = arduinoPort.pipe(new Readl());
-
-    arduinoStream.on('data', (data) => {
-        console.log(data);
-        parsedData = JSON.parse(data);
-        console.log(parsedData);
-        handleArduinoMessage(parsedData);
-    });
 
     wss.on('connection', (ws) => {
         ws.on('open', function open() {
