@@ -308,7 +308,7 @@ function generateGUI() {
 function getCurrentValue() {
     console.log("get current value");
     setTimeout(() => ws_send(WS.GET_LENGTH, true), 100);
-    setTimeout(() => ws_send(WS.GET_SPEED, true), 200);
+    setTimeout(() => ws_send(WS.GET_SPEED, true), 300);
     ws_send(WS.GET_RECOILER, true);
     ws_send(WS.GET_LEVELER, true);
     ws_send(WS.GET_COILER, true);
