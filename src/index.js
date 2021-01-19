@@ -38,9 +38,11 @@ const state = {
 async function run() {
 
     try {
-        modbusSerialHandler = await new SerialHandler({baudRate: cfg.MODBUS_BAUD}).init();
+        modbusSerialHandler = await new SerialHandler({
+            baudRate: cfg.MODBUS_BAUD
+        }).init();
         modbusPort = modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
-        console.log(modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME));
+        console.log(modbusPort);
         const client = new ModbusRTU(modbusPort);
         client.open(() => {
             console.log("modbus port OPEN");
@@ -51,7 +53,7 @@ async function run() {
     try {
         arduinoSerialHandler = await new SerialHandler({baudRate: cfg.ARDUINO_BAUDRATE}).init();
         arduinoPort = arduinoSerialHandler.filterByManufacturer(cfg.ARDUINO_SERIALNAME).get();
-        console.log(arduinoSerialHandler.filterByManufacturer(cfg.ARDUINO_SERIALNAME));
+        console.log(arduinoPort);
         arduinoPort.open(() => {
             console.log("arduino port OPEN");
         });
