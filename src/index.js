@@ -213,19 +213,15 @@ function handleWebsocketMessage(msg) {
             case WS.SET_THREAD_FORWARD:
                 handleThreadFwdCommand();
                 break;
-            case WS.SET_MODE_SINGLE:
-                handleModeSingleCommand();
-                break;
-            case WS.SET_MODE_MULTI:
-                handleModeMultiCommand();
-                break;
             case WS.GET_MODE:
                 handleSendWebsocket({
                     command: (state.mode==0) ? WS.SET_MODE_SINGLE : WS.SET_MODE_MULTI,
                     value: true,
                 });
+                break;
 
             case WS.RESET_DRIVE:
+                console.log('reset called', msg);
                 drive.reset()
                     .then(() => handleSuccessCommand(WS.RESET_DRIVE))
                     .catch(handleErrorCommand);
