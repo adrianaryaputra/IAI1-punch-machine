@@ -38,7 +38,7 @@ const state = {
 async function run() {
 
     try {
-        modbusSerialHandler = await new SerialHandler({ baudRate: cfg.MODBUS_BAUD, stopBits:2}).init();
+        modbusSerialHandler = await new SerialHandler({ baudRate: cfg.MODBUS_BAUD, stopBits: cfg.MODBUS_STOPBIT}).init();
         modbusPort = modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
         console.log(modbusPort);
         const client = new ModbusRTU(modbusPort);
