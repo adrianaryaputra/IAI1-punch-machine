@@ -41,7 +41,7 @@ async function run() {
         modbusSerialHandler = await new SerialHandler({baudRate: cfg.MODBUS_BAUD}).init();
         modbusPort = modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
         console.log(modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME));
-        client = new ModbusRTU(modbusPort);
+        const client = new ModbusRTU(modbusPort);
         client.open(() => {
             console.log("modbus port OPEN");
         });
