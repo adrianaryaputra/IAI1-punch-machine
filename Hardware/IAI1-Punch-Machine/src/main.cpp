@@ -1,4 +1,7 @@
 #include <Arduino.h>
+#include <ArduinoJson.h>
+
+StaticJsonDocument<96> incomingCommand;
 
 #define PULSE_LENGTH 500
 #define MODE_SINGLE false
@@ -17,7 +20,8 @@ String command[] = {
   "Coiler",
   "Feeder",
   "Punching", // untuk count
-  "Feeding" // untuk perintah jalan drive
+  "Feeding", // untuk perintah jalan drive
+  "Mode"
 };
 
 bool runningMode = MODE_SINGLE;
@@ -26,6 +30,7 @@ bool runningMode = MODE_SINGLE;
 void pulseStateChange(int inputPin, bool *lastState, uint64_t *pulseTimer, bool *output, int index);
 void holdStateChange(int inputPin, bool *lastState, bool *output, int index);
 void handleStatusChange(int index, bool output);
+void handleDeserializeCommand();
 
 void setup() {
   // serial init
@@ -65,9 +70,26 @@ void loop() {
   pulseStateChange(inputPin[6], &lastState[6], &pulseTimer[1], &relayState[5], 5);
   digitalWrite(relayPin[5], relayState[5]);
 
+  // DESERIALIZE SERIAL COMMAND
+  if(Serial.available() > 0) handleDeserializeCommand();
+
   delay(10);
 
 }
+
+
+void handleDeserializeCommand() {
+  deserializeJson(incomingCommand, Serial);
+
+  const char* cmd = incomingCommand["command"];
+  int value = incomingCommand["value"];
+  
+  if(String(cmd) == String("Mode")) {
+    runningMode = value;
+    handleStatusChange(6, !value);
+  }
+}
+
 
 void holdStateChange(int inputPin, bool *lastState, bool *output, int index) {
   bool reading = digitalRead(inputPin);

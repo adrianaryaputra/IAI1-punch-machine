@@ -290,6 +290,15 @@ function generateGUI() {
     pubsub.subscribe(PUBSUB.THREAD_FWD, (msg) => buttonThreadFwd.active(msg));
     pubsub.subscribe(PUBSUB.THREAD_REV, (msg) => buttonThreadRev.active(msg));
 
+    pubsub.subscribe(PUBSUB.MODE_MULTI, (msg) => {
+        buttonModeMulti.active(true)
+        buttonModeSingle.active(false)
+    });
+    pubsub.subscribe(PUBSUB.MODE_SINGLE, (msg) => {
+        buttonModeSingle.active(true)
+        buttonModeMulti.active(false)
+    });
+
     pubsub.subscribe(PUBSUB.MESSAGE_SUCCESS, (msg) => messageHandle.success(msg.text, msg.duration));
     pubsub.subscribe(PUBSUB.MESSAGE_WARNING, (msg) => messageHandle.warning(msg.text, msg.duration));
     pubsub.subscribe(PUBSUB.MESSAGE_ERROR, (msg) => messageHandle.error(msg.text, msg.duration));
@@ -305,6 +314,7 @@ function getCurrentValue() {
     ws_send(WS.GET_COILER, true);
     ws_send(WS.GET_FEEDER, true);
     ws_send(WS.GET_COUNT, true);
+    ws_send(WS.GET_MODE, true);
 }
 
 
@@ -379,6 +389,14 @@ function ws_onMessage(evt) {
         case WS.COMM_ERROR:
             pubsub.publish(PUBSUB.MESSAGE_ERROR, {text: parsedEvt.value, duration: 5});
             break;
+
+        case WS.SET_MODE_MULTI:
+            pubsub.publish(PUBSUB.MODE_MULTI, parsedEvt.value);
+            break;
+
+        case WS.SET_MODE_SINGLE:
+            pubsub.publish(PUBSUB.MODE_SINGLE, parsedEvt.value);
+            break;
     }
 }
       
@@ -437,7 +455,7 @@ const WS = {
     GET_INDICATOR: "get_indicator",
     GET_THREAD_FORWARD: "get_threadfwd",
     GET_THREAD_REVERSE: "get_threadrev",
-    GET_MODE_MULTI: "get_modemulti",
+    GET_MODE: "get_mode",
 
     SAVE_PARAMETER: "save",
     RESET_DRIVE: "reset",

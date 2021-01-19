@@ -16,14 +16,16 @@ app.listen(cfg.GUI_PORT, () => {
     console.log(`listening on port ${cfg.GUI_PORT}`);
 });
 
-drive = new Drive_CT_M701({
+var drive = new Drive_CT_M701({
     modbusId: cfg.DRIVE_ID,
     modbusTimeout: cfg.MODBUS_TIMEOUT,
 });
 
+var arduinoPort;
+
 run();
 
-state = {
+const state = {
     recoiler: 0,
     leveler: 0,
     coiler: 0,
@@ -36,6 +38,16 @@ state = {
 async function run() {
 
     try {
+        modbusSerialHandler = await new SerialHandler({baudRate: cfg.MODBUS_BAUD}).init();
+        modbusPort = modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
+        client = new ModbusRTU(modbusPort);
+        client.open(() => {
+            console.log("modbus port OPEN");
+        });
+        drive.setClient(client);
+    } catch(e) { handleErrorCommand(e) }
+
+    try {
         arduinoSerialHandler = await new SerialHandler({baudRate: cfg.ARDUINO_BAUDRATE}).init();
         arduinoPort = arduinoSerialHandler.filterByManufacturer(cfg.ARDUINO_SERIALNAME).get();
         arduinoPort.open(() => {
@@ -43,19 +55,12 @@ async function run() {
         });
         let arduinoStream = arduinoPort.pipe(new Readl());
         arduinoStream.on('data', (data) => {
+            console.log('from arduino:')
             console.log(data);
             parsedData = JSON.parse(data);
             console.log(parsedData);
             handleArduinoMessage(parsedData);
         });
-    } catch(e) { handleErrorCommand(e) }
-
-    try {
-        modbusSerialHandler = await new SerialHandler({baudRate: cfg.MODBUS_BAUD}).init();
-        modbusPort = modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
-        client = new ModbusRTU(modbusPort);
-        client.open();
-        drive.setClient(client);
     } catch(e) { handleErrorCommand(e) }
 
     wss.on('connection', (ws) => {
@@ -127,6 +132,12 @@ function handleWebsocketMessage(msg) {
                     command: WS.GET_FEEDER,
                     value: state.feeder,
                 });
+                break;
+            case WS.SET_MODE_SINGLE:
+                handleModeChange(RUNMODE.SINGLE);
+                break;
+            case WS.SET_MODE_MULTI:
+                handleModeChange(RUNMODE.MULTI);
                 break;
 
             case WS.GET_DISTANCE_MOTOR_TURN:
@@ -206,7 +217,11 @@ function handleWebsocketMessage(msg) {
             case WS.SET_MODE_MULTI:
                 handleModeMultiCommand();
                 break;
-
+            case WS.GET_MODE:
+                handleSendWebsocket({
+                    command: (state.mode==0) ? WS.SET_MODE_SINGLE : WS.SET_MODE_MULTI,
+                    value: true,
+                });
 
             case WS.RESET_DRIVE:
                 drive.reset()
@@ -215,6 +230,24 @@ function handleWebsocketMessage(msg) {
                 break;
         }
     } catch(e) { handleErrorCommand(e) }
+}
+
+
+function handleArduinoSendCommand(payload) {
+    console.log("sending to Arduino:", JSON.stringify(payload));
+    arduinoPort.write(JSON.stringify(payload),(err) => {
+        if(err) {
+            throw Error('Arduino Send Command Fail');
+        }
+    });
+}
+
+
+function handleModeChange(newMode) {
+    try {
+        handleArduinoSendCommand({command: ARDUINO.MODE, value: newMode});
+        state.mode = newMode;
+    } catch (e) { handleErrorCommand(e) }
 }
 
 
@@ -348,6 +381,12 @@ function handleArduinoMessage(data) {
                 value: state.count,
             });
             break;
+        case ARDUINO.MODE:
+            state.mode = data.value,
+            handleSendWebsocket({
+                command: (data.value==RUNMODE.SINGLE) ? WS.SET_MODE_SINGLE : WS.SET_MODE_MULTI,
+                value: true,
+            })
     }
 }
 
@@ -364,6 +403,7 @@ const ARDUINO = {
     FEEDER: 'Feeder',
     PUNCHING: 'Punching',
     FEEDING: 'Feeding',
+    MODE: 'Mode',
 }
 
 const MODBUS = {
@@ -404,7 +444,7 @@ const WS = {
     GET_INDICATOR: "get_indicator",
     GET_THREAD_FORWARD: "get_threadfwd",
     GET_THREAD_REVERSE: "get_threadrev",
-    GET_MODE_MULTI: "get_modemulti",
+    GET_MODE: "get_mode",
 
     SET_DISTANCE_MOTOR_TURN: "set_distMotorTurn",
     SET_DISTANCE_ENCODER_TURN: "set_distEncoderTurn",
