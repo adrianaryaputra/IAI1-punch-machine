@@ -11,7 +11,7 @@ const wss = new WebSocket.Server({ port: cfg.WS_PORT });
 
 const express = require('express');
 const app = express();
-app.use(express.static('src/GUI'))
+app.use(express.static(`${__dirname}/GUI`))
 app.listen(cfg.GUI_PORT, () => {
     console.log(`listening on port ${cfg.GUI_PORT}`);
 });
