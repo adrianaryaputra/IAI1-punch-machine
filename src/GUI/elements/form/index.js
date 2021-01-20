@@ -11,9 +11,11 @@ export class InputElement{
         sideButton,
         regParser,
         inputListener,
+        focusListener,
         blurListener,
     }){
         this.inputListener = inputListener;
+        this.focusListener = focusListener;
         this.blurListener = blurListener;
         this.parent = parent;
         this.strLabel = label;
@@ -31,6 +33,10 @@ export class InputElement{
         if(value.length>0){
             this.set(value);
         }
+    }
+
+    element() {
+        return this.elem.input
     }
 
     _styling() {
@@ -105,7 +111,8 @@ export class InputElement{
         if(this.parent) this.parent.appendChild(this.elem.label);
         this.elem.input.forEach(element => {
             if(!this.isEditable) element.setAttribute("disabled","true");
-            if(this.inputListener) element.addEventListener("input", this.inputListener);
+            if(this.inputListener) element.addEventListener("change", this.inputListener);
+            if(this.focusListener) element.addEventListener("focus", this.focusListener);
             if(this.blurListener) element.addEventListener("blur", this.blurListener);
             this.parent.appendChild(element)
         });

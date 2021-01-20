@@ -126,7 +126,7 @@ function generateGUI() {
                 type: "text",
                 regParser: /^[0-9]+$/,
                 sideButton: btnDistPerMotorTurnSubmit.element(),
-                inputListener: () => {
+                blurListener: () => {
                     btnDistPerMotorTurnSubmit.enable(formLen.parse("distPerMotorTurn"));
                 }
             }, {
@@ -136,7 +136,7 @@ function generateGUI() {
                 type: "text",
                 regParser: /^[0-9]+$/,
                 sideButton: btnDistPerEncoderTurnSubmit.element(),
-                inputListener: () => {
+                blurListener: () => {
                     btnDistPerEncoderTurnSubmit.enable(formLen.parse("distPerEncoderTurn"));
                 }
             }, {
@@ -146,7 +146,7 @@ function generateGUI() {
                 type: "text",
                 regParser: /^[0-9]+$/,
                 sideButton: btnAccelPos.element(),
-                inputListener: () => {
+                blurListener: () => {
                     btnAccelPos.enable(formLen.parse("accelPosition"));
                 }
             }, {
@@ -156,7 +156,7 @@ function generateGUI() {
                 type: "text",
                 regParser: /^[0-9]+$/,
                 sideButton: btnDeccelPos.element(),
-                inputListener: () => {
+                blurListener: () => {
                     btnDeccelPos.enable(formLen.parse("deccelPosition"));
                 }
             }, {
@@ -166,7 +166,7 @@ function generateGUI() {
                 type: "text",
                 regParser: /^[0-9]+$/,
                 sideButton: btnJogAccel.element(),
-                inputListener: () => {
+                blurListener: () => {
                     btnJogAccel.enable(formLen.parse("jogAccel"));
                 }
             }, {
@@ -176,7 +176,7 @@ function generateGUI() {
                 type: "text",
                 regParser: /^[0-9]+$/,
                 sideButton: btnJogDeccel.element(),
-                inputListener: () => {
+                blurListener: () => {
                     btnJogDeccel.enable(formLen.parse("jogDeccel"));
                 }
             }, {
@@ -186,7 +186,7 @@ function generateGUI() {
                 type: "text",
                 regParser: /^[0-9]+$/,
                 sideButton: btnJogSpeed.element(),
-                inputListener: () => {
+                blurListener: () => {
                     btnJogSpeed.enable(formLen.parse("jogSpeed"));
                 }
             }, 
@@ -238,6 +238,67 @@ function generateGUI() {
             location.href = location.origin;
         }
     });
+
+    // keyboard
+    document.body.style.marginBottom = "5em";
+    const inputList = document.querySelectorAll("input[type=text]");
+    inputList.forEach(i => {
+        i.classList.add("virtual-keyboard")
+        i.setAttribute("data-kioskboard-type", "numpad")
+    })
+    KioskBoard.Init({
+        keysArrayOfObjects: [
+            {
+              "0": "Q",
+              "1": "W",
+              "2": "E",
+              "3": "R",
+              "4": "T",
+              "5": "Y",
+              "6": "U",
+              "7": "I",
+              "8": "O",
+              "9": "P"
+            },
+            {
+              "0": "A",
+              "1": "S",
+              "2": "D",
+              "3": "F",
+              "4": "G",
+              "5": "H",
+              "6": "J",
+              "7": "K",
+              "8": "L"
+            },
+            {
+              "0": "Z",
+              "1": "X",
+              "2": "C",
+              "3": "V",
+              "4": "B",
+              "5": "N",
+              "6": "M"
+            }
+          ],
+        language: 'en',
+        // The theme of keyboard => "light" || "dark" || "flat" || "material" || "oldschool"
+        theme: 'dark',
+        capsLockActive: true,
+        allowRealKeyboard: true,
+        cssAnimations: true,
+        cssAnimationsDuration: 360,
+        cssAnimationsStyle: 'slide',
+        keysAllowSpacebar: true,
+        keysSpacebarText: 'Space',
+        keysFontFamily: 'sans-serif',
+        keysFontSize: '22px',
+        keysFontWeight: 'normal',
+        keysIconSize: '25px',
+        allowMobileKeyboard: true,
+        autoScroll: true,
+    });
+    KioskBoard.Run('.virtual-keyboard');
 
     // message handle
     let messageHandle = new MessageViewer({ parent: document.body });

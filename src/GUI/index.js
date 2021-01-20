@@ -80,7 +80,7 @@ function generateGUI() {
                 type: "text",
                 regParser: /^[0-9]+$/,
                 sideButton: lenSubmit.element(),
-                inputListener: () => {
+                blurListener: () => {
                     formLen.set({feedLength: [formLen.get("length")]});
                     lenSubmit.enable(formLen.parse("length"));
                 }
@@ -91,7 +91,7 @@ function generateGUI() {
                 type: "text",
                 regParser: /^[0-9]+$/,
                 sideButton: feedLenSubmit.element(),
-                inputListener: () => {
+                blurListener: () => {
                     feedLenSubmit.enable(formLen.parse("feedLength"));
                 }
             }, {
@@ -101,7 +101,7 @@ function generateGUI() {
                 type: "text",
                 regParser: /^[0-9]+$/,
                 sideButton: speedSubmit.element(),
-                inputListener: () => {
+                blurListener: () => {
                     speedSubmit.enable(formLen.parse("speed"));
                 }
             }, {
@@ -277,6 +277,69 @@ function generateGUI() {
     let messageHandle = new MessageViewer({ parent: document.body });
 
 
+    // keyboard
+    const inputList = document.querySelectorAll("input[type=text]");
+    inputList.forEach(i => {
+        i.classList.add("virtual-keyboard")
+        i.setAttribute("data-kioskboard-type", "numpad")
+    })
+
+    KioskBoard.Init({
+        keysArrayOfObjects: [
+            {
+              "0": "Q",
+              "1": "W",
+              "2": "E",
+              "3": "R",
+              "4": "T",
+              "5": "Y",
+              "6": "U",
+              "7": "I",
+              "8": "O",
+              "9": "P"
+            },
+            {
+              "0": "A",
+              "1": "S",
+              "2": "D",
+              "3": "F",
+              "4": "G",
+              "5": "H",
+              "6": "J",
+              "7": "K",
+              "8": "L"
+            },
+            {
+              "0": "Z",
+              "1": "X",
+              "2": "C",
+              "3": "V",
+              "4": "B",
+              "5": "N",
+              "6": "M"
+            }
+          ],
+        language: 'en',
+        // The theme of keyboard => "light" || "dark" || "flat" || "material" || "oldschool"
+        theme: 'dark',
+        capsLockActive: true,
+        allowRealKeyboard: true,
+        cssAnimations: true,
+        cssAnimationsDuration: 360,
+        cssAnimationsStyle: 'slide',
+        keysAllowSpacebar: true,
+        keysSpacebarText: 'Space',
+        keysFontFamily: 'sans-serif',
+        keysFontSize: '22px',
+        keysFontWeight: 'normal',
+        keysIconSize: '25px',
+        allowMobileKeyboard: true,
+        autoScroll: true,
+    });
+    KioskBoard.Run('.virtual-keyboard');
+
+
+
     // pubsub
     pubsub.subscribe(PUBSUB.LENGTH, (msg) => formLen.set({length: [msg], feedLength: [msg]}));
     pubsub.subscribe(PUBSUB.SPEED, (msg) => formLen.set({speed: [msg]}));
@@ -403,6 +466,15 @@ function ws_onMessage(evt) {
 function ws_onError(evt) {
     console.log(`WS: ${evt.type}`);
     console.log(evt.data);
+}
+
+function keyboard_onChange(input, element) {
+    element.value = input;
+    console.log("Input changed", input);
+}
+  
+function keyboard_onKeyPress(button) {
+    console.log("Button pressed", button);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
