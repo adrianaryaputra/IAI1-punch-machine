@@ -48,22 +48,22 @@ async function run() {
         drive.setClient(client);
     } catch(e) { handleErrorCommand(e) }
 
-    try {
-        arduinoSerialHandler = await new SerialHandler({baudRate: cfg.ARDUINO_BAUDRATE}).init();
-        arduinoPort = arduinoSerialHandler.filterByManufacturer(cfg.ARDUINO_SERIALNAME).get();
-        console.log(arduinoPort);
-        arduinoPort.open(() => {
-            console.log("arduino port OPEN");
-        });
-        let arduinoStream = arduinoPort.pipe(new Readl());
-        arduinoStream.on('data', (data) => {
-            console.log('from arduino:')
-            console.log(data);
-            parsedData = JSON.parse(data);
-            console.log(parsedData);
-            handleArduinoMessage(parsedData);
-        });
-    } catch(e) { handleErrorCommand(e) }
+    // try {
+    //     arduinoSerialHandler = await new SerialHandler({baudRate: cfg.ARDUINO_BAUDRATE}).init();
+    //     arduinoPort = arduinoSerialHandler.filterByManufacturer(cfg.ARDUINO_SERIALNAME).get();
+    //     console.log(arduinoPort);
+    //     arduinoPort.open(() => {
+    //         console.log("arduino port OPEN");
+    //     });
+    //     let arduinoStream = arduinoPort.pipe(new Readl());
+    //     arduinoStream.on('data', (data) => {
+    //         console.log('from arduino:')
+    //         console.log(data);
+    //         parsedData = JSON.parse(data);
+    //         console.log(parsedData);
+    //         handleArduinoMessage(parsedData);
+    //     });
+    // } catch(e) { handleErrorCommand(e) }
 
     wss.on('connection', (ws) => {
         ws.on('open', function open() {

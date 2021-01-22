@@ -151,15 +151,18 @@ export class FormElement{
 
     constructor({
         parent,
-        configs = []
+        configs = [],
+        style = {},
     }){
         this.parent = parent;
         this.configs = configs;
         this.elem = new Object();
         this.inputs = new Object();
+        this.customStyles = style;
 
         this._createHTML();
         this._styling();
+
     }
 
     element(){
@@ -170,6 +173,9 @@ export class FormElement{
         this.element().style.display = "grid";
         this.element().style.gridTemplateColumns = "auto 35% 35%";
         this.element().style.gap = "var(--normal)";
+        for (const key in this.customStyles) {
+            this.element().style[key] = this.customStyles[key]
+        }
     }
 
     _createHTML(){

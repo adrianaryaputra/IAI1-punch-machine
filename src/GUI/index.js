@@ -72,6 +72,9 @@ function generateGUI() {
 
     let formLen = new FormElement({
         parent: holderForm.element(),
+        style: {
+            gap: "1em",
+        },
         configs: [
             {
                 id: "length",
@@ -122,7 +125,7 @@ function generateGUI() {
     });
 
     let holderStatus = new Holder({
-        parent: document.body,
+        // parent: document.body,
         style: {
             padding: "1em",
         }
@@ -141,7 +144,7 @@ function generateGUI() {
             padding: "1rem 0",
             display: "grid",
             gridTemplateColumns: "repeat(4, minmax(3rem, 1fr))",
-            gap: "2rem",
+            gap: "1em",
         }
     });
 
@@ -180,7 +183,7 @@ function generateGUI() {
     let holderControl = new Holder({
         parent: document.body,
         style: {
-            padding: "1em",
+            padding: "2em 1em",
         }
     });
 
@@ -194,11 +197,11 @@ function generateGUI() {
     let holderThread = new Holder({
         parent: holderControl.element(),
         style: {
-            padding: "1rem 0 0 0",
+            padding: "1em 0 0 0",
             display: "grid",
             width: "100%",
             gridTemplateColumns: "repeat(2, minmax(3rem, 1fr))",
-            gap: "2rem",
+            gap: "1em",
             justifyContent: "center",
         }
     });
@@ -231,15 +234,15 @@ function generateGUI() {
     let holderCommand = new Holder({
         parent: holderControl.element(),
         style: {
-            padding: "2rem 0 0 0",
+            padding: "1em 0 0 0",
             display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(3rem, 1fr))",
-            gap: "2rem",
+            gridTemplateColumns: "repeat(2, minmax(3rem, 1fr))",
+            gap: "1em",
         }
     });
 
     let buttonModeSingle = new ClickableButton({
-        parent: holderCommand.element(),
+        // parent: holderCommand.element(),
         text: "Single Mode",
         style: buttonStyle,
         callback: () => {
@@ -248,7 +251,7 @@ function generateGUI() {
     });
 
     let buttonModeMulti = new ClickableButton({
-        parent: holderCommand.element(),
+        // parent: holderCommand.element(),
         text: "Multi Mode",
         style: buttonStyle,
         callback: () => {
