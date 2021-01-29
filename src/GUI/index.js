@@ -453,7 +453,7 @@ function ws_onMessage(evt) {
             break;
 
         case WS.COMM_ERROR:
-            pubsub.publish(PUBSUB.MESSAGE_ERROR, {text: parsedEvt.value, duration: 5});
+            pubsub.publish(PUBSUB.MESSAGE_ERROR, {text: parsedEvt.value, duration: 1});
             break;
 
         case WS.SET_MODE_MULTI:

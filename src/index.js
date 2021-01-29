@@ -23,7 +23,9 @@ var drive = new Drive_CT_M701({
 
 var arduinoPort;
 
-run();
+runDrive();
+runArduino();
+runWS();
 
 const state = {
     recoiler: 0,
@@ -35,8 +37,7 @@ const state = {
 }
 
 
-async function run() {
-
+async function runDrive() {
     try {
         modbusSerialHandler = await new SerialHandler({ baudRate: cfg.MODBUS_BAUD, stopBits: cfg.MODBUS_STOPBIT}).init();
         modbusPort = modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
@@ -46,8 +47,14 @@ async function run() {
             console.log("modbus port OPEN");
         });
         drive.setClient(client);
-    } catch(e) { handleErrorCommand(e) }
+    } catch(e) { 
+        handleErrorCommand(e);
+        setTimeout(() => {runDrive()}, 5000); 
+    }
+}
 
+
+async function runArduino() {
     try {
         arduinoSerialHandler = await new SerialHandler({baudRate: cfg.ARDUINO_BAUDRATE}).init();
         arduinoPort = arduinoSerialHandler.filterByManufacturer(cfg.ARDUINO_SERIALNAME).get();
@@ -69,11 +76,15 @@ async function run() {
             arduinoPort.open(() => {
                 console.log("arduino port OPEN");
             });
-        })
+        });
+    } catch(e) { 
+        handleErrorCommand(e);
+        setTimeout(() => {runArduino()}, 5000); 
+    }
+}
 
 
-    } catch(e) { handleErrorCommand(e) }
-
+async function runWS() {
     wss.on('connection', (ws) => {
         ws.on('open', function open() {
             ws.send('connected to websocket');
@@ -84,8 +95,6 @@ async function run() {
             console.log('parsed', parsedMsg);
             handleWebsocketMessage(parsedMsg);
         });
-
-        // setInterval(() => {handleModbusRead(wss)}, 1000);
     });
 }
 
