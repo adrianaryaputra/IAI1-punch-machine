@@ -375,12 +375,12 @@ function getCurrentValue() {
     console.log("get current value");
     setTimeout(() => ws_send(WS.GET_LENGTH, true), 100);
     setTimeout(() => ws_send(WS.GET_SPEED, true), 300);
-    ws_send(WS.GET_RECOILER, true);
-    ws_send(WS.GET_LEVELER, true);
-    ws_send(WS.GET_COILER, true);
-    ws_send(WS.GET_FEEDER, true);
-    ws_send(WS.GET_COUNT, true);
-    ws_send(WS.GET_MODE, true);
+    // ws_send(WS.GET_RECOILER, true);
+    // ws_send(WS.GET_LEVELER, true);
+    // ws_send(WS.GET_COILER, true);
+    // ws_send(WS.GET_FEEDER, true);
+    // ws_send(WS.GET_COUNT, true);
+    // ws_send(WS.GET_MODE, true);
 }
 
 
