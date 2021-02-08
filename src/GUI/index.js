@@ -65,8 +65,15 @@ function generateGUI() {
         text: "Reset Count",
         color: "#f00",
         callback: () => {
-            ws_send(WS.SET_COUNT, 0);
-            formLen.set({count: [0]});
+            ws_send(WS.RESET_COUNT, true);
+        }
+    });
+
+    let countPreset = new ClickableButton({
+        text: "Preset Count",
+        color: "#0f0",
+        callback: () => {
+            ws_send(WS.PRESET_COUNT, formLen.get("pcount"));
         }
     });
 
@@ -114,12 +121,13 @@ function generateGUI() {
                 regParser: /^[0-9]+$/,
                 value: [0],
                 sideButton: countReset.element(),
-                blurListener: () => {
-                    console.log(formLen.get("count"), formLen.parse("count"));
-                    if(formLen.parse("count")){
-                        ws_send(WS.SET_COUNT, parseInt(formLen.get("count")));
-                    }
-                }
+            }, {
+                id: "pcount",
+                label: "Preset Count",
+                type: "text",
+                regParser: /^[0-9]+$/,
+                value: [0],
+                sideButton: countPreset.element(),
             }
         ]
     });
@@ -364,6 +372,7 @@ function generateGUI() {
         buttonModeSingle.active(true)
         buttonModeMulti.active(false)
     });
+    pubsub.subscribe(WS.PRESET_COUNT, (msg) => formLen.set({pcount: [msg]}));
 
     pubsub.subscribe(PUBSUB.MESSAGE_SUCCESS, (msg) => messageHandle.success(msg.text, msg.duration));
     pubsub.subscribe(PUBSUB.MESSAGE_WARNING, (msg) => messageHandle.warning(msg.text, msg.duration));
@@ -375,6 +384,7 @@ function getCurrentValue() {
     console.log("get current value");
     setTimeout(() => ws_send(WS.GET_LENGTH, true), 100);
     setTimeout(() => ws_send(WS.GET_SPEED, true), 300);
+    setInterval(() => ws_send(WS.GET_COUNT, true), 1000);
     // ws_send(WS.GET_RECOILER, true);
     // ws_send(WS.GET_LEVELER, true);
     // ws_send(WS.GET_COILER, true);
@@ -434,6 +444,10 @@ function ws_onMessage(evt) {
 
         case WS.GET_LENGTH:
             pubsub.publish(PUBSUB.LENGTH, parsedEvt.value);
+            break;
+
+        case WS.PRESET_COUNT:
+            pubsub.publish(WS.PRESET_COUNT, parsedEvt.value);
             break;
 
         case WS.GET_SPEED:
@@ -517,7 +531,8 @@ const WS = {
     SET_LENGTH: "set_length",
     SET_FEED_LENGTH: "set_feedlength",
     SET_SPEED: "set_speed",
-    SET_COUNT: "set_count",
+    PRESET_COUNT: "preset_count",
+    RESET_COUNT: "reset_count",
     SET_THREAD_FORWARD: "set_threadfwd",
     SET_THREAD_REVERSE: "set_threadrev",
     SET_MODE_SINGLE: "set_modesingle",

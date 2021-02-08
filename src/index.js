@@ -24,7 +24,7 @@ var drive = new Drive_CT_M701({
 var arduinoPort;
 
 runDrive();
-runArduino();
+// runArduino();
 runWS();
 
 const state = {
@@ -188,10 +188,7 @@ function handleWebsocketMessage(msg) {
                 handleScaledGetCommand(MODBUS.SPEED, 0.5, WS.GET_SPEED);
                 break;
             case WS.GET_COUNT:
-                handleSendWebsocket({
-                    command: WS.GET_COUNT,
-                    value: state.count,
-                });
+                handleDefaultGetCommand(MODBUS.COUNTER_CV, WS.GET_COUNT);
                 break;
 
 
@@ -222,8 +219,12 @@ function handleWebsocketMessage(msg) {
             case WS.SET_SPEED:
                 handleScaledSetCommand(MODBUS.SPEED, 0.5, WS.SET_SPEED, msg.value);
                 break;
-            case WS.SET_COUNT:
-                state.count = msg.value;
+            case WS.RESET_COUNT:
+                handleDefaultSetCommand(MODBUS.COUNTER_RESET, WS.RESET_COUNT, msg.value);
+                setTimeout(() => {handleDefaultGetCommand(MODBUS.COUNTER_PV, WS.PRESET_COUNT)}, 200);
+                break;
+            case WS.PRESET_COUNT:
+                handleDefaultSetCommand(MODBUS.COUNTER_PV, WS.PRESET_COUNT, msg.value);
                 break;
             case WS.SET_THREAD_REVERSE:
                 handleThreadRevCommand();
@@ -360,53 +361,6 @@ async function handleThreadRevCommand() {
 }
 
 
-function handleArduinoMessage(data) {
-    switch(data.command) {
-        case ARDUINO.RECOILER:
-            state.recoiler = data.value;
-            handleSendWebsocket({
-                command: ARDUINO.RECOILER,
-                value: state.recoiler,
-            });
-            break;
-        case ARDUINO.LEVELER:
-            state.leveler = data.value;
-            handleSendWebsocket({
-                command: ARDUINO.LEVELER,
-                value: state.leveler,
-            });
-            break;
-        case ARDUINO.COILER:
-            state.coiler = data.value;
-            handleSendWebsocket({
-                command: ARDUINO.COILER,
-                value: state.coiler,
-            });
-            break;
-        case ARDUINO.FEEDER:
-            state.feeder = data.value;
-            handleSendWebsocket({
-                command: ARDUINO.FEEDER,
-                value: state.feeder,
-            });
-            break;
-        case ARDUINO.PUNCHING:
-            state.count += 1
-            handleSendWebsocket({
-                command: WS.GET_COUNT,
-                value: state.count,
-            });
-            break;
-        case ARDUINO.MODE:
-            state.mode = data.value,
-            handleSendWebsocket({
-                command: (data.value==RUNMODE.SINGLE) ? WS.SET_MODE_SINGLE : WS.SET_MODE_MULTI,
-                value: true,
-            })
-    }
-}
-
-
 const RUNMODE = {
     SINGLE: 0,
     MULTI: 1,
@@ -435,6 +389,10 @@ const MODBUS = {
     JOG_ACCELERATION: {menu:19, parameter:11},
     JOG_DECCELERATION: {menu:19, parameter:12},
     JOG_SPEED: {menu:19, parameter:13},
+
+    COUNTER_PV: {menu:19, parameter:29},
+    COUNTER_CV: {menu:19, parameter:30},
+    COUNTER_RESET: {menu:19, parameter:50},
 }
 
 
@@ -448,7 +406,8 @@ const WS = {
 
     SET_LENGTH: "set_length",
     SET_SPEED: "set_speed",
-    SET_COUNT: "set_count",
+    PRESET_COUNT: "preset_count",
+    RESET_COUNT: "reset_count",
     SET_THREAD_FORWARD: "set_threadfwd",
     SET_THREAD_REVERSE: "set_threadrev",
     SET_MODE_SINGLE: "set_modesingle",
