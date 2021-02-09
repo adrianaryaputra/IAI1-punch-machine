@@ -1,6 +1,6 @@
 # Services
 
-copy the services to /etc/systemd/system/punch-machine.service
+sudo cp ./punch-machine.service /etc/systemd/system/punch-machine.service
 
 sudo systemctl enable punch-machine.service
 

@@ -40,6 +40,7 @@ const state = {
 async function runDrive() {
     try {
         modbusSerialHandler = await new SerialHandler({ baudRate: cfg.MODBUS_BAUD, stopBits: cfg.MODBUS_STOPBIT}).init();
+        // console.log(modbusSerialHandler);
         modbusPort = modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
         console.log(modbusPort);
         const client = new ModbusRTU(modbusPort);

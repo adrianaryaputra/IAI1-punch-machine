@@ -4,7 +4,7 @@ module.exports = Object.freeze({
     
     MODBUS_BAUD: 19200,
     MODBUS_STOPBIT: 2,
-    MODBUS_SERIALNAME: '1a86',
+    MODBUS_SERIALNAME: 'FTDI',
     MODBUS_TIMEOUT: 500,
     DRIVE_ID: 1,
 
