@@ -1,0 +1,14 @@
+[Unit]
+Description=Punch Machine
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/node /home/pi/IAI1-punch-machine/src/index.js
+WorkingDirectory=/home/pi/IAI1-punch-machine
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target
