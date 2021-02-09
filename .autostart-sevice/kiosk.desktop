@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Kiosk
+Exec=/usr/bin/chromium-browser --window-size=1024,768 --kiosk --window-position=0,0 http://localhost:8080
+X-GNOME-Autostart-enabled=true
