@@ -1,10 +1,10 @@
 const cfg = require('./config');
 
 const SerialHandler = require('./serial-handler');
-const Readl = require('@serialport/parser-readline');
 
 const ModbusRTU = require("modbus-serial");
 const Drive_CT_M701 = require("./drive-ct-m701");
+const PLC_FX3U = require("./plc-mitsubishi-fx3u");
 
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: cfg.WS_PORT });
@@ -21,66 +21,37 @@ var drive = new Drive_CT_M701({
     modbusTimeout: cfg.MODBUS_TIMEOUT,
 });
 
-var arduinoPort;
+var plc = new PLC_FX3U({
+    modbusId: cfg.PLC_ID,
+    modbusTimeout: cfg.MODBUS_TIMEOUT
+});
 
-runDrive();
-// runArduino();
+runModbus();
 runWS();
 
-const state = {
-    recoiler: 0,
-    leveler: 0,
-    coiler: 0,
-    feeder: 0,
-    count: 0,
-    mode: 0,
-}
 
-
-async function runDrive() {
+async function runModbus() {
     try {
+
         modbusSerialHandler = await new SerialHandler({ baudRate: cfg.MODBUS_BAUD, stopBits: cfg.MODBUS_STOPBIT}).init();
-        // console.log(modbusSerialHandler);
         modbusPort = modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
         console.log(modbusPort);
         const client = new ModbusRTU(modbusPort);
-        client.open(() => {
-            console.log("modbus port OPEN");
-        });
+        client.open(() => console.log("modbus port OPEN"));
         drive.setClient(client);
+        plc.setClient(client);
+
+        // setInterval(() => {
+        //     plc.read_M(20,1)
+        //         .then(console.log)
+        //         .catch(console.error);
+        // },1500);
+
     } catch(e) { 
-        handleErrorCommand(e);
-        setTimeout(() => {runDrive()}, 5000); 
-    }
-}
-
-
-async function runArduino() {
-    try {
-        arduinoSerialHandler = await new SerialHandler({baudRate: cfg.ARDUINO_BAUDRATE}).init();
-        arduinoPort = arduinoSerialHandler.filterByManufacturer(cfg.ARDUINO_SERIALNAME).get();
-        console.log(arduinoPort);
-        arduinoPort.open(() => {
-            console.log("arduino port OPEN");
-        });
-        let arduinoStream = arduinoPort.pipe(new Readl());
         
-        arduinoStream.on('data', (data) => {
-            console.log('from arduino:')
-            console.log(data);
-            parsedData = JSON.parse(data);
-            console.log(parsedData);
-            handleArduinoMessage(parsedData);
-        });
-
-        arduinoPort.on('close', (err) => {
-            arduinoPort.open(() => {
-                console.log("arduino port OPEN");
-            });
-        });
-    } catch(e) { 
         handleErrorCommand(e);
-        setTimeout(() => {runArduino()}, 5000); 
+        setTimeout(() => runModbus(), 5000); 
+    
     }
 }
 
@@ -130,102 +101,72 @@ function handleErrorCommand(err) {
 function handleWebsocketMessage(msg) {
     try {
         switch(msg.command){
-            case WS.GET_RECOILER:
-                handleSendWebsocket({
-                    command: WS.GET_RECOILER,
-                    value: state.recoiler,
-                });
-                break;
-            case WS.GET_LEVELER:
-                handleSendWebsocket({
-                    command: WS.GET_LEVELER,
-                    value: state.leveler,
-                });
-                break;
-            case WS.GET_COILER:
-                handleSendWebsocket({
-                    command: WS.GET_COILER,
-                    value: state.coiler,
-                });
-                break;
-            case WS.GET_FEEDER:
-                handleSendWebsocket({
-                    command: WS.GET_FEEDER,
-                    value: state.feeder,
-                });
-                break;
-            case WS.SET_MODE_SINGLE:
-                handleModeChange(RUNMODE.SINGLE);
-                break;
-            case WS.SET_MODE_MULTI:
-                handleModeChange(RUNMODE.MULTI);
-                break;
 
             case WS.GET_DISTANCE_MOTOR_TURN:
-                handleDefaultGetCommand(MODBUS.DISTANCE_MOTOR_TURN, WS.GET_DISTANCE_MOTOR_TURN);
+                handleDefaultGetCommand(DRIVE.DISTANCE_MOTOR_TURN, WS.GET_DISTANCE_MOTOR_TURN);
                 break;
             case WS.GET_DISTANCE_ENCODER_TURN:
-                handleDefaultGetCommand(MODBUS.DISTANCE_ENCODER_TURN, WS.GET_DISTANCE_ENCODER_TURN);
+                handleDefaultGetCommand(DRIVE.DISTANCE_ENCODER_TURN, WS.GET_DISTANCE_ENCODER_TURN);
                 break;
             case WS.GET_ACCELERATION_POSITION:
-                handleDefaultGetCommand(MODBUS.ACCELERATION_POSITION, WS.GET_ACCELERATION_POSITION);
+                handleDefaultGetCommand(DRIVE.ACCELERATION_POSITION, WS.GET_ACCELERATION_POSITION);
                 break;
             case WS.GET_DECCELERATION_POSITION:
-                handleDefaultGetCommand(MODBUS.DECCELERATION_POSITION, WS.GET_DECCELERATION_POSITION);
+                handleDefaultGetCommand(DRIVE.DECCELERATION_POSITION, WS.GET_DECCELERATION_POSITION);
                 break;
             case WS.GET_JOG_ACCELERATION:
-                handleDefaultGetCommand(MODBUS.JOG_ACCELERATION, WS.GET_JOG_ACCELERATION);
+                handleDefaultGetCommand(DRIVE.JOG_ACCELERATION, WS.GET_JOG_ACCELERATION);
                 break;
             case WS.GET_JOG_DECCELERATION:
-                handleDefaultGetCommand(MODBUS.JOG_DECCELERATION, WS.GET_JOG_DECCELERATION);
+                handleDefaultGetCommand(DRIVE.JOG_DECCELERATION, WS.GET_JOG_DECCELERATION);
                 break;
             case WS.GET_JOG_SPEED:
-                handleScaledGetCommand(MODBUS.JOG_SPEED, 0.5, WS.GET_JOG_SPEED);
+                handleScaledGetCommand(DRIVE.JOG_SPEED, 0.5, WS.GET_JOG_SPEED);
                 break;
             case WS.GET_LENGTH:
-                handleDefaultGetCommand(MODBUS.LENGTH, WS.GET_LENGTH);
+                handleDefaultGetCommand(DRIVE.LENGTH, WS.GET_LENGTH);
                 break;
             case WS.GET_SPEED:
-                handleScaledGetCommand(MODBUS.SPEED, 0.5, WS.GET_SPEED);
+                handleScaledGetCommand(DRIVE.SPEED, 0.5, WS.GET_SPEED);
                 break;
             case WS.GET_COUNT:
-                handleDefaultGetCommand(MODBUS.COUNTER_CV, WS.GET_COUNT);
+                handleDefaultGetCommand(DRIVE.COUNTER_CV, WS.GET_COUNT);
                 break;
 
 
             case WS.SET_DISTANCE_MOTOR_TURN:
-                handleDefaultSetCommand(MODBUS.DISTANCE_MOTOR_TURN, WS.SET_DISTANCE_MOTOR_TURN, msg.value);
+                handleDefaultSetCommand(DRIVE.DISTANCE_MOTOR_TURN, WS.SET_DISTANCE_MOTOR_TURN, msg.value);
                 break;
             case WS.SET_DISTANCE_ENCODER_TURN:
-                handleDefaultSetCommand(MODBUS.DISTANCE_ENCODER_TURN, WS.SET_DISTANCE_ENCODER_TURN, msg.value);
+                handleDefaultSetCommand(DRIVE.DISTANCE_ENCODER_TURN, WS.SET_DISTANCE_ENCODER_TURN, msg.value);
                 break;
             case WS.SET_ACCELERATION_POSITION:
-                handleDefaultSetCommand(MODBUS.ACCELERATION_POSITION, WS.SET_ACCELERATION_POSITION, msg.value);
+                handleDefaultSetCommand(DRIVE.ACCELERATION_POSITION, WS.SET_ACCELERATION_POSITION, msg.value);
                 break;
             case WS.SET_DECCELERATION_POSITION:
-                handleDefaultSetCommand(MODBUS.DECCELERATION_POSITION, WS.SET_DECCELERATION_POSITION, msg.value);
+                handleDefaultSetCommand(DRIVE.DECCELERATION_POSITION, WS.SET_DECCELERATION_POSITION, msg.value);
                 break;
             case WS.SET_JOG_ACCELERATION:
-                handleDefaultSetCommand(MODBUS.JOG_ACCELERATION, WS.SET_JOG_ACCELERATION, msg.value);
+                handleDefaultSetCommand(DRIVE.JOG_ACCELERATION, WS.SET_JOG_ACCELERATION, msg.value);
                 break;
             case WS.SET_JOG_DECCELERATION:
-                handleDefaultSetCommand(MODBUS.JOG_DECCELERATION, WS.SET_JOG_DECCELERATION, msg.value);
+                handleDefaultSetCommand(DRIVE.JOG_DECCELERATION, WS.SET_JOG_DECCELERATION, msg.value);
                 break;
             case WS.SET_JOG_SPEED:
-                handleScaledSetCommand(MODBUS.JOG_SPEED, 0.5, WS.SET_JOG_SPEED, msg.value);
+                handleScaledSetCommand(DRIVE.JOG_SPEED, 0.5, WS.SET_JOG_SPEED, msg.value);
                 break;
             case WS.SET_LENGTH:
-                handleDefaultSetCommand(MODBUS.LENGTH, WS.SET_LENGTH, msg.value);
+                handleDefaultSetCommand(DRIVE.LENGTH, WS.SET_LENGTH, msg.value);
                 break;
             case WS.SET_SPEED:
-                handleScaledSetCommand(MODBUS.SPEED, 0.5, WS.SET_SPEED, msg.value);
+                handleScaledSetCommand(DRIVE.SPEED, 0.5, WS.SET_SPEED, msg.value);
                 break;
             case WS.RESET_COUNT:
-                handleDefaultSetCommand(MODBUS.COUNTER_RESET, WS.RESET_COUNT, msg.value);
-                setTimeout(() => {handleDefaultGetCommand(MODBUS.COUNTER_PV, WS.PRESET_COUNT)}, 200);
+                handleDefaultSetCommand(DRIVE.COUNTER_RESET, WS.RESET_COUNT, msg.value);
+                setTimeout(() => {handleDefaultGetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT)}, 200);
                 break;
             case WS.PRESET_COUNT:
-                handleDefaultSetCommand(MODBUS.COUNTER_PV, WS.PRESET_COUNT, msg.value);
+                handleDefaultSetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT, msg.value);
                 break;
             case WS.SET_THREAD_REVERSE:
                 handleThreadRevCommand();
@@ -233,39 +174,42 @@ function handleWebsocketMessage(msg) {
             case WS.SET_THREAD_FORWARD:
                 handleThreadFwdCommand();
                 break;
-            case WS.GET_MODE:
-                handleSendWebsocket({
-                    command: (state.mode==0) ? WS.SET_MODE_SINGLE : WS.SET_MODE_MULTI,
-                    value: true,
-                });
-                break;
-
             case WS.RESET_DRIVE:
                 console.log('reset called', msg);
                 drive.reset()
                     .then(() => handleSuccessCommand(WS.RESET_DRIVE))
                     .catch(handleErrorCommand);
                 break;
+
+            case WS.GET_PLC_STATUS:
+                handlePlcGetIndicator();
+                break;
         }
     } catch(e) { handleErrorCommand(e) }
 }
 
 
-function handleArduinoSendCommand(payload) {
-    console.log("sending to Arduino:", JSON.stringify(payload));
-    arduinoPort.write(JSON.stringify(payload),(err) => {
-        if(err) {
-            throw Error('Arduino Send Command Fail');
-        }
-    });
-}
-
-
-function handleModeChange(newMode) {
-    try {
-        handleArduinoSendCommand({command: ARDUINO.MODE, value: newMode});
-        state.mode = newMode;
-    } catch (e) { handleErrorCommand(e) }
+function handlePlcGetIndicator() {
+    plc.read_M(20,1)
+        .then(v => {
+            handleSendWebsocket({
+                command: WS.GET_UNCOILER,
+                value: v.data[0],
+            });
+            handleSendWebsocket({
+                command: WS.GET_LEVELER,
+                value: v.data[1],
+            });
+            handleSendWebsocket({
+                command: WS.GET_RECOILER,
+                value: v.data[2],
+            });
+            handleSendWebsocket({
+                command: WS.GET_FEEDER,
+                value: v.data[3],
+            });
+        })
+        .catch(handleErrorCommand);
 }
 
 
@@ -312,9 +256,9 @@ function handleDefaultGetCommand(parameter, wsCommand) {
 async function handleThreadFwdCommand() {
     try {
 
-        var current = await drive.readParameter(MODBUS.THREAD_FORWARD);
+        var current = await drive.readParameter(DRIVE.THREAD_FORWARD);
 
-        await drive.writeParameter({...MODBUS.THREAD_REVERSE, value: 0})
+        await drive.writeParameter({...DRIVE.THREAD_REVERSE, value: 0})
             .then(() => handleSendWebsocket({
                 command: WS.SET_THREAD_REVERSE,
                 value: 0,
@@ -322,7 +266,7 @@ async function handleThreadFwdCommand() {
             .catch(handleErrorCommand);
 
         setTimeout(() => {
-            drive.writeParameter({...MODBUS.THREAD_FORWARD, value: (current.data[0]==1)?0:1})
+            drive.writeParameter({...DRIVE.THREAD_FORWARD, value: (current.data[0]==1)?0:1})
                 .then(() => handleSendWebsocket({
                     command: WS.SET_THREAD_FORWARD,
                     value: (current.data[0] == 1) ? 0 : 1,
@@ -339,9 +283,9 @@ async function handleThreadRevCommand() {
     
     try {
 
-        var current = await drive.readParameter(MODBUS.THREAD_REVERSE);
+        var current = await drive.readParameter(DRIVE.THREAD_REVERSE);
 
-        drive.writeParameter({...MODBUS.THREAD_FORWARD, value: 0})
+        drive.writeParameter({...DRIVE.THREAD_FORWARD, value: 0})
             .then(() => handleSendWebsocket({
                 command: WS.SET_THREAD_FORWARD,
                 value: 0,
@@ -349,7 +293,7 @@ async function handleThreadRevCommand() {
             .catch(handleErrorCommand);
 
         setTimeout(() => {
-            drive.writeParameter({...MODBUS.THREAD_REVERSE, value: (current.data[0]==1)?0:1})
+            drive.writeParameter({...DRIVE.THREAD_REVERSE, value: (current.data[0]==1)?0:1})
                 .then(() => handleSendWebsocket({
                     command: WS.SET_THREAD_REVERSE,
                     value: (current.data[0] == 1) ? 0 : 1,
@@ -361,23 +305,7 @@ async function handleThreadRevCommand() {
 
 }
 
-
-const RUNMODE = {
-    SINGLE: 0,
-    MULTI: 1,
-}
-
-const ARDUINO = {
-    RECOILER: 'Recoiler',
-    LEVELER: 'Leveller',
-    COILER: 'Coiler',
-    FEEDER: 'Feeder',
-    PUNCHING: 'Punching',
-    FEEDING: 'Feeding',
-    MODE: 'Mode',
-}
-
-const MODBUS = {
+const DRIVE = {
     LENGTH: { menu:18, parameter:52},
     SPEED: {menu:18, parameter:13},
     THREAD_FORWARD: {menu:18, parameter:31},
@@ -398,12 +326,8 @@ const MODBUS = {
 
 
 const WS = {
-    GET_RECOILER: ARDUINO.RECOILER,
-    GET_LEVELER: ARDUINO.LEVELER,
-    GET_COILER: ARDUINO.COILER,
-    GET_FEEDER: ARDUINO.FEEDER,
-    GET_PUNCHING: ARDUINO.PUNCHING,
-    GET_FEEDING: ARDUINO.FEEDING,
+
+    GET_PLC_STATUS: 'PLC_Status',
 
     SET_LENGTH: "set_length",
     SET_SPEED: "set_speed",
@@ -440,6 +364,11 @@ const WS = {
 
     SAVE_PARAMETER: "save",
     RESET_DRIVE: "reset",
+
+    GET_UNCOILER: 'Uncoiler',
+    GET_LEVELER: 'Leveller',
+    GET_RECOILER: 'Recoiler',
+    GET_FEEDER: 'Feeder',
 
     COMM_SUCCESS: "com_success",
     COMM_ERROR: "com_error",

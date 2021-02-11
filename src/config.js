@@ -4,10 +4,9 @@ module.exports = Object.freeze({
     
     MODBUS_BAUD: 19200,
     MODBUS_STOPBIT: 2,
+    
     MODBUS_SERIALNAME: 'FTDI',
-    MODBUS_TIMEOUT: 500,
+    MODBUS_TIMEOUT: 2000,
     DRIVE_ID: 1,
-
-    ARDUINO_BAUDRATE: 9600,
-    ARDUINO_SERIALNAME: 'FTDI',
+    PLC_ID: 2,
 })

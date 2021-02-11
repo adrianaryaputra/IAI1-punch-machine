@@ -133,7 +133,7 @@ function generateGUI() {
     });
 
     let holderStatus = new Holder({
-        // parent: document.body,
+        parent: document.body,
         style: {
             padding: "1em",
         }
@@ -164,9 +164,9 @@ function generateGUI() {
         textAlign: "center",
     };
 
-    let indicatorRecoiler = new Indicator({
+    let indicatorUncoiler = new Indicator({
         parent: holderIndicator.element(),
-        text: "Recoiler",
+        text: "Uncoiler",
         style: indicatorStyle,
     });
 
@@ -176,9 +176,9 @@ function generateGUI() {
         style: indicatorStyle,
     });
 
-    let indicatorCoiler = new Indicator({
+    let indicatorRecoiler = new Indicator({
         parent: holderIndicator.element(),
-        text: "Coiler",
+        text: "Recoiler",
         style: indicatorStyle,
     });
 
@@ -356,9 +356,9 @@ function generateGUI() {
     pubsub.subscribe(PUBSUB.SPEED, (msg) => formLen.set({speed: [msg]}));
     pubsub.subscribe(PUBSUB.COUNT, (msg) => formLen.set({count: [msg]}));
 
-    pubsub.subscribe(PUBSUB.STATUS_RECOILER, (msg) => indicatorRecoiler.set(msg));
+    pubsub.subscribe(PUBSUB.STATUS_UNCOILER, (msg) => indicatorUncoiler.set(msg));
     pubsub.subscribe(PUBSUB.STATUS_LEVELER, (msg) => indicatorLeveler.set(msg));
-    pubsub.subscribe(PUBSUB.STATUS_COILER, (msg) => indicatorCoiler.set(msg));
+    pubsub.subscribe(PUBSUB.STATUS_RECOILER, (msg) => indicatorRecoiler.set(msg));
     pubsub.subscribe(PUBSUB.STATUS_FEEDER, (msg) => indicatorFeeder.set(msg));
 
     pubsub.subscribe(PUBSUB.THREAD_FWD, (msg) => buttonThreadFwd.active(msg));
@@ -381,16 +381,14 @@ function generateGUI() {
 
 
 function getCurrentValue() {
-    console.log("get current value");
-    setTimeout(() => ws_send(WS.GET_LENGTH, true), 100);
-    setTimeout(() => ws_send(WS.GET_SPEED, true), 300);
-    setInterval(() => ws_send(WS.GET_COUNT, true), 1000);
-    // ws_send(WS.GET_RECOILER, true);
-    // ws_send(WS.GET_LEVELER, true);
-    // ws_send(WS.GET_COILER, true);
-    // ws_send(WS.GET_FEEDER, true);
-    // ws_send(WS.GET_COUNT, true);
-    // ws_send(WS.GET_MODE, true);
+    
+    setTimeout(() => ws_send(WS.GET_LENGTH, true), 200);
+    setTimeout(() => ws_send(WS.GET_SPEED, true), 400);
+    
+    setInterval(() => {
+        setTimeout(() => ws_send(WS.GET_COUNT, true), 100);
+        setTimeout(() => ws_send(WS.GET_PLC_STATUS, true), 300);
+    }, 1000);
 }
 
 
@@ -422,16 +420,16 @@ function ws_onMessage(evt) {
     let parsedEvt = JSON.parse(evt.data);
     console.log(parsedEvt);
     switch(parsedEvt.command){
-        case WS.GET_RECOILER:
-            pubsub.publish(PUBSUB.STATUS_RECOILER, parsedEvt.value);
+        case WS.GET_UNCOILER:
+            pubsub.publish(PUBSUB.STATUS_UNCOILER, parsedEvt.value);
             break;
 
         case WS.GET_LEVELER:
             pubsub.publish(PUBSUB.STATUS_LEVELER, parsedEvt.value);
             break;
 
-        case WS.GET_COILER:
-            pubsub.publish(PUBSUB.STATUS_COILER, parsedEvt.value);
+        case WS.GET_RECOILER:
+            pubsub.publish(PUBSUB.STATUS_RECOILER, parsedEvt.value);
             break;
 
         case WS.GET_FEEDER:
@@ -521,12 +519,13 @@ const PUBSUB = {
 }
 
 const WS = {
-    GET_RECOILER: 'Recoiler',
+    GET_UNCOILER: 'Uncoiler',
     GET_LEVELER: 'Leveller',
-    GET_COILER: 'Coiler',
+    GET_RECOILER: 'Recoiler',
     GET_FEEDER: 'Feeder',
     GET_PUNCHING: 'Punching',
     GET_FEEDING: 'Feeding',
+    GET_PLC_STATUS: 'PLC_Status',
 
     SET_LENGTH: "set_length",
     SET_FEED_LENGTH: "set_feedlength",
