@@ -176,7 +176,7 @@ function handlePlcGetIndicator() {
                 value: v.data[3],
             });
         })
-        .catch(handleErrorCommand);
+        .catch(() => {});
 }
 
 
