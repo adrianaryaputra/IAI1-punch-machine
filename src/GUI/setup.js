@@ -67,7 +67,7 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("deccelPosition"), formLen.parse("deccelPosition"));
             if(formLen.parse("deccelPosition")){
-                ws_send(WS.SET_ACCELERATION_POSITION, formLen.get("deccelPosition"));
+                ws_send(WS.SET_DECCELERATION_POSITION, formLen.get("deccelPosition"));
                 btnAccelPos.enable(false);
             }
         }
@@ -81,7 +81,7 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("jogAccel"), formLen.parse("jogAccel"));
             if(formLen.parse("jogAccel")){
-                ws_send(WS.SET_ACCELERATION_POSITION, formLen.get("jogAccel"));
+                ws_send(WS.SET_JOG_ACCELERATION, formLen.get("jogAccel"));
                 btnJogAccel.enable(false);
             }
         }
@@ -95,7 +95,7 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("jogDeccel"), formLen.parse("jogDeccel"));
             if(formLen.parse("jogDeccel")){
-                ws_send(WS.SET_ACCELERATION_POSITION, formLen.get("jogDeccel"));
+                ws_send(WS.SET_JOG_DECCELERATION, formLen.get("jogDeccel"));
                 btnJogDeccel.enable(false);
             }
         }
@@ -109,7 +109,7 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("jogSpeed"), formLen.parse("jogSpeed"));
             if(formLen.parse("jogSpeed")){
-                ws_send(WS.SET_ACCELERATION_POSITION, formLen.get("jogSpeed"));
+                ws_send(WS.SET_JOG_SPEED, formLen.get("jogSpeed"));
                 btnJogSpeed.enable(false);
             }
         }
@@ -335,7 +335,8 @@ function ws_send(command, value) {
 }
       
 function ws_onOpen(evt) {
-    getCurrentValue();
+    // getCurrentValue();
+    ws_send(WS.GET_DRIVE_SETTING, true);
 }
       
 function ws_onClose(evt) {
@@ -385,16 +386,16 @@ function ws_onError(evt) {
 }
 
 
-function getCurrentValue() {
-    console.log("get current value");
-    setTimeout(() => ws_send(WS.GET_DISTANCE_MOTOR_TURN, true), 0);
-    setTimeout(() => ws_send(WS.GET_DISTANCE_ENCODER_TURN, true), 100);
-    setTimeout(() => ws_send(WS.GET_ACCELERATION_POSITION, true), 200);
-    setTimeout(() => ws_send(WS.GET_DECCELERATION_POSITION, true), 300);
-    setTimeout(() => ws_send(WS.GET_JOG_ACCELERATION, true), 400);
-    setTimeout(() => ws_send(WS.GET_JOG_DECCELERATION, true), 500);
-    setTimeout(() => ws_send(WS.GET_JOG_SPEED, true), 600);
-}
+// function getCurrentValue() {
+//     console.log("get current value");
+//     setTimeout(() => ws_send(WS.GET_DISTANCE_MOTOR_TURN, true), 0);
+//     setTimeout(() => ws_send(WS.GET_DISTANCE_ENCODER_TURN, true), 100);
+//     setTimeout(() => ws_send(WS.GET_ACCELERATION_POSITION, true), 200);
+//     setTimeout(() => ws_send(WS.GET_DECCELERATION_POSITION, true), 300);
+//     setTimeout(() => ws_send(WS.GET_JOG_ACCELERATION, true), 400);
+//     setTimeout(() => ws_send(WS.GET_JOG_DECCELERATION, true), 500);
+//     setTimeout(() => ws_send(WS.GET_JOG_SPEED, true), 600);
+// }
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -420,6 +421,8 @@ const PUBSUB = {
 }
 
 const WS = {
+
+    GET_DRIVE_SETTING: 'Drive_Setting',
 
     SET_DISTANCE_MOTOR_TURN: "set_distMotorTurn",
     SET_DISTANCE_ENCODER_TURN: "set_distEncoderTurn",

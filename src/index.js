@@ -40,18 +40,9 @@ async function runModbus() {
         client.open(() => console.log("modbus port OPEN"));
         drive.setClient(client);
         plc.setClient(client);
-
-        // setInterval(() => {
-        //     plc.read_M(20,1)
-        //         .then(console.log)
-        //         .catch(console.error);
-        // },1500);
-
     } catch(e) { 
-        
         handleErrorCommand(e);
         setTimeout(() => runModbus(), 5000); 
-    
     }
 }
 
@@ -101,39 +92,6 @@ function handleErrorCommand(err) {
 function handleWebsocketMessage(msg) {
     try {
         switch(msg.command){
-
-            case WS.GET_DISTANCE_MOTOR_TURN:
-                handleDefaultGetCommand(DRIVE.DISTANCE_MOTOR_TURN, WS.GET_DISTANCE_MOTOR_TURN);
-                break;
-            case WS.GET_DISTANCE_ENCODER_TURN:
-                handleDefaultGetCommand(DRIVE.DISTANCE_ENCODER_TURN, WS.GET_DISTANCE_ENCODER_TURN);
-                break;
-            case WS.GET_ACCELERATION_POSITION:
-                handleDefaultGetCommand(DRIVE.ACCELERATION_POSITION, WS.GET_ACCELERATION_POSITION);
-                break;
-            case WS.GET_DECCELERATION_POSITION:
-                handleDefaultGetCommand(DRIVE.DECCELERATION_POSITION, WS.GET_DECCELERATION_POSITION);
-                break;
-            case WS.GET_JOG_ACCELERATION:
-                handleDefaultGetCommand(DRIVE.JOG_ACCELERATION, WS.GET_JOG_ACCELERATION);
-                break;
-            case WS.GET_JOG_DECCELERATION:
-                handleDefaultGetCommand(DRIVE.JOG_DECCELERATION, WS.GET_JOG_DECCELERATION);
-                break;
-            case WS.GET_JOG_SPEED:
-                handleScaledGetCommand(DRIVE.JOG_SPEED, 0.5, WS.GET_JOG_SPEED);
-                break;
-            case WS.GET_LENGTH:
-                handleDefaultGetCommand(DRIVE.LENGTH, WS.GET_LENGTH);
-                break;
-            case WS.GET_SPEED:
-                handleScaledGetCommand(DRIVE.SPEED, 0.5, WS.GET_SPEED);
-                break;
-            case WS.GET_COUNT:
-                handleDefaultGetCommand(DRIVE.COUNTER_CV, WS.GET_COUNT);
-                break;
-
-
             case WS.SET_DISTANCE_MOTOR_TURN:
                 handleDefaultSetCommand(DRIVE.DISTANCE_MOTOR_TURN, WS.SET_DISTANCE_MOTOR_TURN, msg.value);
                 break;
@@ -153,13 +111,13 @@ function handleWebsocketMessage(msg) {
                 handleDefaultSetCommand(DRIVE.JOG_DECCELERATION, WS.SET_JOG_DECCELERATION, msg.value);
                 break;
             case WS.SET_JOG_SPEED:
-                handleScaledSetCommand(DRIVE.JOG_SPEED, 0.5, WS.SET_JOG_SPEED, msg.value);
+                handleDefaultSetCommand(DRIVE.JOG_SPEED, WS.SET_JOG_SPEED, msg.value);
                 break;
             case WS.SET_LENGTH:
                 handleDefaultSetCommand(DRIVE.LENGTH, WS.SET_LENGTH, msg.value);
                 break;
             case WS.SET_SPEED:
-                handleScaledSetCommand(DRIVE.SPEED, 0.5, WS.SET_SPEED, msg.value);
+                handleDefaultSetCommand(DRIVE.SPEED, WS.SET_SPEED, msg.value);
                 break;
             case WS.RESET_COUNT:
                 handleDefaultSetCommand(DRIVE.COUNTER_RESET, WS.RESET_COUNT, msg.value);
@@ -173,6 +131,15 @@ function handleWebsocketMessage(msg) {
                 break;
             case WS.SET_THREAD_FORWARD:
                 handleThreadFwdCommand();
+                break;
+            case WS.GET_DRIVE_DASHBOARD:
+                handleDriveDashboard();
+                break;
+            case WS.GET_DRIVE_SETTING:
+                handleDriveSetting();
+                break;
+            case WS.GET_COUNT:
+                handleIntervalGetCommand(DRIVE.COUNTER_CV, WS.GET_COUNT);
                 break;
             case WS.RESET_DRIVE:
                 console.log('reset called', msg);
@@ -213,22 +180,69 @@ function handlePlcGetIndicator() {
 }
 
 
-function handleScaledSetCommand(parameter, scale, wsCommand, value) {
-    drive.writeParameter({...parameter, value: value/scale})
-        .then(() => handleSuccessCommand(wsCommand))
-        .catch(handleErrorCommand);
+function handleDriveDashboard() {
+    drive.readParameter(DRIVE.INIT_DASHBOARD)
+        .then(v => {
+            handleSendWebsocket({
+                command: WS.GET_LENGTH,
+                value: v.data[0],
+            });
+            handleSendWebsocket({
+                command: WS.GET_SPEED,
+                value: v.data[1],
+            });
+            handleSendWebsocket({
+                command: WS.PRESET_COUNT,
+                value: v.data[3],
+            });
+            handleSendWebsocket({
+                command: WS.GET_COUNT,
+                value: v.data[3],
+            });
+        })
+        .catch((e) => {
+            handleErrorCommand(e);
+            setTimeout(() => {handleDriveDashboard()}, cfg.RETRY_TIMEOUT);
+        });
 }
 
 
-function handleScaledGetCommand(parameter, scale, wsCommand) {
-    drive.readParameter(parameter)
-        .then((v) => {
+function handleDriveSetting() {
+    drive.readParameter(DRIVE.INIT_SETTING)
+        .then(v => {
             handleSendWebsocket({
-                command: wsCommand,
-                value: v.data[0]*scale,
+                command: WS.GET_DISTANCE_MOTOR_TURN,
+                value: v.data[0],
+            });
+            handleSendWebsocket({
+                command: WS.GET_DISTANCE_ENCODER_TURN,
+                value: v.data[1],
+            });
+            handleSendWebsocket({
+                command: WS.GET_ACCELERATION_POSITION,
+                value: v.data[2],
+            });
+            handleSendWebsocket({
+                command: WS.GET_DECCELERATION_POSITION,
+                value: v.data[3],
+            });
+            handleSendWebsocket({
+                command: WS.GET_JOG_ACCELERATION,
+                value: v.data[4],
+            });
+            handleSendWebsocket({
+                command: WS.GET_JOG_DECCELERATION,
+                value: v.data[5],
+            });
+            handleSendWebsocket({
+                command: WS.GET_JOG_SPEED,
+                value: v.data[6],
             });
         })
-        .catch(handleErrorCommand);
+        .catch((e) => {
+            handleErrorCommand(e);
+            setTimeout(() => {handleDriveSetting()}, cfg.RETRY_TIMEOUT);
+        });
 }
 
 
@@ -237,7 +251,10 @@ function handleDefaultSetCommand(parameter, wsCommand, value) {
         ...parameter, value
     })
         .then(() => handleSuccessCommand(wsCommand))
-        .catch(handleErrorCommand);
+        .catch(e => {
+            setTimeout(() => {handleDefaultSetCommand(parameter, wsCommand, value)}, cfg.RETRY_TIMEOUT);
+            handleErrorCommand(e);
+        });
 }
 
 
@@ -249,7 +266,22 @@ function handleDefaultGetCommand(parameter, wsCommand) {
                 value: v.data[0],
             });
         })
-        .catch(handleErrorCommand);
+        .catch(e => {
+            setTimeout(() => {handleDefaultGetCommand(parameter, wsCommand)}, cfg.RETRY_TIMEOUT);
+            handleErrorCommand(e);
+        });
+}
+
+
+function handleIntervalGetCommand(parameter, wsCommand) {
+    drive.readParameter(parameter)
+        .then((v) => {
+            handleSendWebsocket({
+                command: wsCommand,
+                value: v.data[0],
+            });
+        })
+        .catch(e => {});
 }
 
 
@@ -306,28 +338,34 @@ async function handleThreadRevCommand() {
 }
 
 const DRIVE = {
-    LENGTH: { menu:18, parameter:52},
-    SPEED: {menu:18, parameter:13},
+    LENGTH: {menu:18, parameter:1},
+    SPEED: {menu:18, parameter:12},
+
+    COUNTER_PV: {menu:18, parameter:13},
+    COUNTER_CV: {menu:18, parameter:4},
+    COUNTER_RESET: {menu:19, parameter:50},
+
     THREAD_FORWARD: {menu:18, parameter:31},
     THREAD_REVERSE: {menu:18, parameter:32},
 
-    DISTANCE_MOTOR_TURN: {menu:19, parameter:15},
-    DISTANCE_ENCODER_TURN: {menu:19, parameter:16},
-    ACCELERATION_POSITION: {menu:18, parameter:11},
-    DECCELERATION_POSITION: {menu:18, parameter:12},
-    JOG_ACCELERATION: {menu:19, parameter:11},
-    JOG_DECCELERATION: {menu:19, parameter:12},
-    JOG_SPEED: {menu:19, parameter:13},
+    DISTANCE_MOTOR_TURN: {menu:18, parameter:51},
+    DISTANCE_ENCODER_TURN: {menu:18, parameter:52},
+    ACCELERATION_POSITION: {menu:18, parameter:53},
+    DECCELERATION_POSITION: {menu:18, parameter:54},
+    JOG_ACCELERATION: {menu:19, parameter:51},
+    JOG_DECCELERATION: {menu:19, parameter:52},
+    JOG_SPEED: {menu:19, parameter:53},
 
-    COUNTER_PV: {menu:19, parameter:29},
-    COUNTER_CV: {menu:19, parameter:30},
-    COUNTER_RESET: {menu:19, parameter:50},
+    INIT_DASHBOARD: {menu:18, parameter:1, length:4},
+    INIT_SETTING: {menu:18, parameter:5, length:7},
 }
 
 
 const WS = {
 
     GET_PLC_STATUS: 'PLC_Status',
+    GET_DRIVE_DASHBOARD: 'Drive_Dashboard',
+    GET_DRIVE_SETTING: 'Drive_Setting',
 
     SET_LENGTH: "set_length",
     SET_SPEED: "set_speed",

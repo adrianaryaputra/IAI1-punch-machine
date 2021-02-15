@@ -376,18 +376,15 @@ function generateGUI() {
 
     pubsub.subscribe(PUBSUB.MESSAGE_SUCCESS, (msg) => messageHandle.success(msg.text, msg.duration));
     pubsub.subscribe(PUBSUB.MESSAGE_WARNING, (msg) => messageHandle.warning(msg.text, msg.duration));
-    // pubsub.subscribe(PUBSUB.MESSAGE_ERROR, (msg) => messageHandle.error(msg.text, msg.duration));
+    pubsub.subscribe(PUBSUB.MESSAGE_ERROR, (msg) => messageHandle.error(msg.text, msg.duration));
 }
 
 
 function getCurrentValue() {
-    
-    setTimeout(() => ws_send(WS.GET_LENGTH, true), 200);
-    setTimeout(() => ws_send(WS.GET_SPEED, true), 400);
-    
+    ws_send(WS.GET_DRIVE_DASHBOARD, true);
     setInterval(() => {
-        setTimeout(() => ws_send(WS.GET_COUNT, true), 100);
-        setTimeout(() => ws_send(WS.GET_PLC_STATUS, true), 300);
+        setTimeout(() => ws_send(WS.GET_COUNT, true), 0);
+        // setTimeout(() => ws_send(WS.GET_PLC_STATUS, true), 200);
     }, 1000);
 }
 
@@ -465,7 +462,7 @@ function ws_onMessage(evt) {
             break;
 
         case WS.COMM_ERROR:
-            pubsub.publish(PUBSUB.MESSAGE_ERROR, {text: parsedEvt.value, duration: 1});
+            pubsub.publish(PUBSUB.MESSAGE_ERROR, {text: parsedEvt.value, duration: 2});
             break;
 
         case WS.SET_MODE_MULTI:
@@ -481,15 +478,6 @@ function ws_onMessage(evt) {
 function ws_onError(evt) {
     console.log(`WS: ${evt.type}`);
     console.log(evt.data);
-}
-
-function keyboard_onChange(input, element) {
-    element.value = input;
-    console.log("Input changed", input);
-}
-  
-function keyboard_onKeyPress(button) {
-    console.log("Button pressed", button);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -509,9 +497,9 @@ const PUBSUB = {
     SPEED: "gui-speed",
     COUNT: "gui-count",
 
-    STATUS_RECOILER: "status-recoiler",
+    STATUS_UNCOILER: "status-uncoiler",
     STATUS_LEVELER: "status-leveler",
-    STATUS_COILER: "status-coiler",
+    STATUS_RECOILER: "status-recoiler",
     STATUS_FEEDER: "status-feeder",
 
     MODE_SINGLE: "mode-single",
@@ -525,7 +513,10 @@ const WS = {
     GET_FEEDER: 'Feeder',
     GET_PUNCHING: 'Punching',
     GET_FEEDING: 'Feeding',
+
     GET_PLC_STATUS: 'PLC_Status',
+    GET_DRIVE_DASHBOARD: 'Drive_Dashboard',
+    GET_DRIVE_SETTING: 'Drive_Setting',
 
     SET_LENGTH: "set_length",
     SET_FEED_LENGTH: "set_feedlength",
