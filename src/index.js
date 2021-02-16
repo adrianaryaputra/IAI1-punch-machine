@@ -165,12 +165,12 @@ function handleWebsocketMessage(msg) {
                 break;
             case WS.RESET_COUNT:
                 handleDefaultSetCommand(DRIVE.COUNTER_RESET, WS.RESET_COUNT, msg.value, () => {
-                    handleDefaultGetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT)
+                    setTimeout(() => {handleDefaultGetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT)}, 200);
                 });
                 break;
             case WS.PRESET_COUNT:
                 handleDefaultSetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT, msg.value, () => {
-                    handleDefaultGetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT)
+                    setTimeout(() => {handleDefaultGetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT)}, 200);
                 });
                 break;
             case WS.SET_THREAD_REVERSE:
