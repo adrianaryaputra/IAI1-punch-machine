@@ -8,7 +8,7 @@ module.exports = Object.freeze({
     MODBUS_TIMEOUT: 2000,
     RETRY_TIMEOUT: 500,
 
-    STATUS_RETRY_COUNT: 10,
+    STATUS_RETRY_COUNT: 3,
 
     DRIVE_ID: 1,
     PLC_ID: 2,
