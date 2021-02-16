@@ -29,6 +29,11 @@ var plc = new PLC_FX3U({
 runModbus();
 runWS();
 
+var statusCounter = {
+    PLC: 0,
+    Drive: 0,
+};
+
 
 async function runModbus() {
     try {
@@ -74,18 +79,40 @@ function handleSendWebsocket(payload) {
 
 
 function handlePLCStatus(onlineStatus) {
-    handleSendWebsocket({
-        command: WS.PLC_STATUS,
-        value: onlineStatus,
-    })
+    if(!onlineStatus){
+        statusCounter.PLC += 1;
+        if(statusCounter.PLC > cfg.STATUS_RETRY_COUNT) {
+            handleSendWebsocket({
+                command: WS.PLC_STATUS,
+                value: onlineStatus,
+            })
+        }
+    } else {
+        statusCounter.PLC = 0;
+        handleSendWebsocket({
+            command: WS.PLC_STATUS,
+            value: onlineStatus,
+        })
+    }
 }
 
 
 function handleDriveStatus(onlineStatus) {
-    handleSendWebsocket({
-        command: WS.DRIVE_STATUS,
-        value: onlineStatus,
-    })
+    if(!onlineStatus){
+        statusCounter.Drive += 1;
+        if(statusCounter.Drive > cfg.STATUS_RETRY_COUNT) {
+            handleSendWebsocket({
+                command: WS.DRIVE_STATUS,
+                value: onlineStatus,
+            })
+        }
+    } else {
+        statusCounter.PLC = 0;
+        handleSendWebsocket({
+            command: WS.DRIVE_STATUS,
+            value: onlineStatus,
+        })
+    }
 }
 
 
