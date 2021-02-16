@@ -197,6 +197,15 @@ function handleWebsocketMessage(msg) {
                     .then(() => handleSuccessCommand(WS.RESET_DRIVE))
                     .catch(handleErrorCommand);
                 break;
+            case WS.GET_DRIVE_TRIP:
+                handleDriveTrip();
+                break;
+            case WS.GET_DRIVE_SUBTRIP:
+                handleDriveSubtrip();
+                break;
+            case WS.GET_DRIVE_TRIP_DATE:
+                handleDriveTripDate();
+                break;
 
             case WS.GET_PLC_DASHBOARD:
                 handlePlcGetIndicator();
@@ -315,6 +324,188 @@ function handleDriveSetting() {
         .catch((e) => {
             // handleErrorCommand(e);
             setTimeout(() => {handleDriveSetting()}, cfg.RETRY_TIMEOUT);
+        });
+}
+
+function handleDriveTrip() {
+    var tripData = new Object();
+    _handleDriveTrip_P1(tripData);
+    setTimeout(() => _handleDriveTrip_P2(tripData), 200);
+}
+
+
+function _handleDriveTrip_P1(tripData) {
+    drive.readParameter(DRIVE.GET_TRIP_P1)
+        .then(v => {
+            tripData.P1 = v.data;
+            if(tripData.P1 && tripData.P2){
+                handleSendWebsocket({
+                    command: WS.GET_DRIVE_TRIP,
+                    value: [].concat(tripData.P1, tripData.P2),
+                });
+            } else {
+                console.log("INCOMPLETE TRIP", tripData);
+            }
+        })
+        .catch((e) => {
+            console.error(e);
+            setTimeout(() => _handleDriveTrip_P1(tripData), cfg.RETRY_TIMEOUT);
+        });
+}
+
+
+function _handleDriveTrip_P2(tripData) {
+    drive.readParameter(DRIVE.GET_TRIP_P2)
+        .then(v => {
+            tripData.P2 = v.data;
+            if(tripData.P1 && tripData.P2){
+                handleSendWebsocket({
+                    command: WS.GET_DRIVE_TRIP,
+                    value: [].concat(tripData.P1, tripData.P2),
+                });
+            } else {
+                console.log("INCOMPLETE TRIP", tripData);
+            }
+        })
+        .catch((e) => {
+            console.error(e);
+            setTimeout(() => _handleDriveTrip_P2(tripData), cfg.RETRY_TIMEOUT);
+        });
+}
+
+
+function handleDriveSubtrip() {
+    var tripData = new Object();
+    _handleDriveSubtrip_P1(tripData);
+    setTimeout(() => _handleDriveSubtrip_P2(tripData), 200);
+}
+
+
+function _handleDriveSubtrip_P1(tripData) {
+    drive.readParameter(DRIVE.GET_SUBTRIP_P1)
+        .then(v => {
+            tripData.P1 = v.data;
+            if(tripData.P1 && tripData.P2){
+                handleSendWebsocket({
+                    command: WS.GET_DRIVE_SUBTRIP,
+                    value: [].concat(tripData.P1, tripData.P2),
+                });
+            } else {
+                console.log("INCOMPLETE TRIP", tripData);
+            }
+        })
+        .catch((e) => {
+            console.error(e);
+            setTimeout(() => _handleDriveSubtrip_P1(tripData), cfg.RETRY_TIMEOUT);
+        });
+}
+
+
+function _handleDriveSubtrip_P2(tripData) {
+    drive.readParameter(DRIVE.GET_SUBTRIP_P2)
+        .then(v => {
+            tripData.P2 = v.data;
+            if(tripData.P1 && tripData.P2){
+                handleSendWebsocket({
+                    command: WS.GET_DRIVE_SUBTRIP,
+                    value: [].concat(tripData.P1, tripData.P2),
+                });
+            } else {
+                console.log("INCOMPLETE TRIP", tripData);
+            }
+        })
+        .catch((e) => {
+            console.error(e);
+            setTimeout(() => _handleDriveSubtrip_P2(tripData), cfg.RETRY_TIMEOUT);
+        });
+}
+
+
+function handleDriveTripDate() {
+    var tripData = new Object();
+    _handleDriveTripDate_P1(tripData);
+    setTimeout(() => _handleDriveTripDate_P2(tripData), 200);
+    setTimeout(() => _handleDriveTripDate_P3(tripData), 400);
+    setTimeout(() => _handleDriveTripDate_P4(tripData), 600);
+}
+
+
+function _handleDriveTripDate_P1(tripData) {
+    drive.readParameter(DRIVE.GET_TRIP_DATE_P1)
+        .then(v => {
+            tripData.P1 = v.data;
+            if(tripData.P1 && tripData.P2 && tripData.P3 && tripData.P4){
+                handleSendWebsocket({
+                    command: WS.GET_DRIVE_TRIP_DATE,
+                    value: [].concat(tripData.P1, tripData.P2, tripData.P3, tripData.P4),
+                });
+            } else {
+                console.log("INCOMPLETE TRIP", tripData);
+            }
+        })
+        .catch((e) => {
+            console.error(e);
+            setTimeout(() => _handleDriveTripDate_P1(tripData), cfg.RETRY_TIMEOUT);
+        });
+}
+
+
+function _handleDriveTripDate_P2(tripData) {
+    drive.readParameter(DRIVE.GET_TRIP_DATE_P2)
+        .then(v => {
+            tripData.P2 = v.data;
+            if(tripData.P1 && tripData.P2 && tripData.P3 && tripData.P4){
+                handleSendWebsocket({
+                    command: WS.GET_DRIVE_TRIP_DATE,
+                    value: [].concat(tripData.P1, tripData.P2, tripData.P3, tripData.P4),
+                });
+            } else {
+                console.log("INCOMPLETE TRIP", tripData);
+            }
+        })
+        .catch((e) => {
+            console.error(e);
+            setTimeout(() => _handleDriveTripDate_P2(tripData), cfg.RETRY_TIMEOUT);
+        });
+}
+
+
+function _handleDriveTripDate_P3(tripData) {
+    drive.readParameter(DRIVE.GET_TRIP_DATE_P3)
+        .then(v => {
+            tripData.P3 = v.data;
+            if(tripData.P1 && tripData.P2 && tripData.P3 && tripData.P4){
+                handleSendWebsocket({
+                    command: WS.GET_DRIVE_TRIP_DATE,
+                    value: [].concat(tripData.P1, tripData.P2, tripData.P3, tripData.P4),
+                });
+            } else {
+                console.log("INCOMPLETE TRIP", tripData);
+            }
+        })
+        .catch((e) => {
+            console.error(e);
+            setTimeout(() => _handleDriveTripDate_P3(tripData), cfg.RETRY_TIMEOUT);
+        });
+}
+
+
+function _handleDriveTripDate_P4(tripData) {
+    drive.readParameter(DRIVE.GET_TRIP_DATE_P4)
+        .then(v => {
+            tripData.P4 = v.data;
+            if(tripData.P1 && tripData.P2 && tripData.P3 && tripData.P4){
+                handleSendWebsocket({
+                    command: WS.GET_DRIVE_TRIP_DATE,
+                    value: [].concat(tripData.P1, tripData.P2, tripData.P3, tripData.P4),
+                });
+            } else {
+                console.log("INCOMPLETE TRIP", tripData);
+            }
+        })
+        .catch((e) => {
+            console.error(e);
+            setTimeout(() => _handleDriveTripDate_P4(tripData), cfg.RETRY_TIMEOUT);
         });
 }
 
@@ -438,6 +629,15 @@ const DRIVE = {
     INIT_DASHBOARD: {menu:18, parameter:1, length:4},
     UPDATE_DASHBOARD: {menu:18, parameter:3, length:2},
     INIT_SETTING: {menu:18, parameter:5, length:7},
+
+    GET_TRIP_P1: {menu:10, parameter:20, length:5},
+    GET_TRIP_P2: {menu:10, parameter:25, length:5},
+    GET_TRIP_DATE_P1: {menu:10, parameter:41, length:5},
+    GET_TRIP_DATE_P2: {menu:10, parameter:46, length:5},
+    GET_TRIP_DATE_P3: {menu:10, parameter:51, length:5},
+    GET_TRIP_DATE_P4: {menu:10, parameter:56, length:5},
+    GET_SUBTRIP_P1: {menu:10, parameter:70, length:5},
+    GET_SUBTRIP_P2: {menu:10, parameter:75, length:5},
 }
 
 
@@ -451,6 +651,10 @@ const WS = {
     GET_DRIVE_DASHBOARD: 'Drive_Dashboard',
     GET_DRIVE_DASHBOARD_UPDATE: 'Drive_Dashboard_Update',
     GET_DRIVE_SETTING: 'Drive_Setting',
+
+    GET_DRIVE_TRIP: 'Get_Drive_Trip',
+    GET_DRIVE_SUBTRIP: 'Get_Drive_Subtrip',
+    GET_DRIVE_TRIP_DATE: 'Get_Drive_Trip_Date',
 
     SET_LENGTH: "set_length",
     SET_SPEED: "set_speed",

@@ -338,7 +338,6 @@ function ws_send(command, value) {
 }
       
 function ws_onOpen(evt) {
-    // getCurrentValue();
     ws_send(WS.GET_DRIVE_SETTING, true);
 }
       
@@ -387,18 +386,6 @@ function ws_onError(evt) {
     console.log(`WS: ${evt.type}`);
     console.log(evt.data);
 }
-
-
-// function getCurrentValue() {
-//     console.log("get current value");
-//     setTimeout(() => ws_send(WS.GET_DISTANCE_MOTOR_TURN, true), 0);
-//     setTimeout(() => ws_send(WS.GET_DISTANCE_ENCODER_TURN, true), 100);
-//     setTimeout(() => ws_send(WS.GET_ACCELERATION_POSITION, true), 200);
-//     setTimeout(() => ws_send(WS.GET_DECCELERATION_POSITION, true), 300);
-//     setTimeout(() => ws_send(WS.GET_JOG_ACCELERATION, true), 400);
-//     setTimeout(() => ws_send(WS.GET_JOG_DECCELERATION, true), 500);
-//     setTimeout(() => ws_send(WS.GET_JOG_SPEED, true), 600);
-// }
 
 
 document.addEventListener("DOMContentLoaded", () => {
