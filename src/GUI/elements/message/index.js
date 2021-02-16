@@ -38,7 +38,7 @@ export class MessageViewer{
         this.holder.style.color = "#000";
         this.holder.style.margin = "1em";
         this.holder.style.padding = "1em";
-        this.holder.style.borderRadius = "1em";
+        this.holder.style.borderRadius = ".5rem";
         this.holder.style.display = "flex";
         this.holder.style.justifyContent = "space-between";
         this.holder.style.boxShadow = "0 0 1em #000";

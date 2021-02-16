@@ -41,7 +41,8 @@ async function runModbus() {
         drive.setClient(client);
         plc.setClient(client);
     } catch(e) { 
-        handleErrorCommand(e);
+        handlePLCStatus(false);
+        handleDriveStatus(false);
         setTimeout(() => runModbus(), 5000); 
     }
 }
@@ -69,6 +70,22 @@ function handleSendWebsocket(payload) {
             client.send(JSON.stringify(payload));
         }
     });
+}
+
+
+function handlePLCStatus(onlineStatus) {
+    handleSendWebsocket({
+        command: WS.PLC_STATUS,
+        value: onlineStatus,
+    })
+}
+
+
+function handleDriveStatus(onlineStatus) {
+    handleSendWebsocket({
+        command: WS.DRIVE_STATUS,
+        value: onlineStatus,
+    })
 }
 
 
@@ -148,7 +165,7 @@ function handleWebsocketMessage(msg) {
                     .catch(handleErrorCommand);
                 break;
 
-            case WS.GET_PLC_STATUS:
+            case WS.GET_PLC_DASHBOARD:
                 handlePlcGetIndicator();
                 break;
         }
@@ -175,8 +192,11 @@ function handlePlcGetIndicator() {
                 command: WS.GET_FEEDER,
                 value: v.data[3],
             });
+            handlePLCStatus(true);
         })
-        .catch(() => {});
+        .catch(() => {
+            handlePLCStatus(false);
+        });
 }
 
 
@@ -199,9 +219,11 @@ function handleDriveDashboard() {
                 command: WS.GET_COUNT,
                 value: v.data[3],
             });
+            handleDriveStatus(true);
         })
         .catch((e) => {
             handleErrorCommand(e);
+            handleDriveStatus(false);
             setTimeout(() => {handleDriveDashboard()}, cfg.RETRY_TIMEOUT);
         });
 }
@@ -280,8 +302,11 @@ function handleIntervalGetCommand(parameter, wsCommand) {
                 command: wsCommand,
                 value: v.data[0],
             });
+            handleDriveStatus(true);
         })
-        .catch(e => {});
+        .catch(e => {
+            handleDriveStatus(false);
+        });
 }
 
 
@@ -363,7 +388,10 @@ const DRIVE = {
 
 const WS = {
 
-    GET_PLC_STATUS: 'PLC_Status',
+    PLC_STATUS: 'PLC_Status',
+    DRIVE_STATUS: 'DRIVE_Status',
+
+    GET_PLC_DASHBOARD: 'PLC_Dashboard',
     GET_DRIVE_DASHBOARD: 'Drive_Dashboard',
     GET_DRIVE_SETTING: 'Drive_Setting',
 

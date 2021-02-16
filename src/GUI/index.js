@@ -14,7 +14,7 @@ function generateGUI() {
     let holderForm = new Holder({
         parent: document.body,
         style: {
-            padding: "1em",
+            margin: "1em",
         }
     });
 
@@ -135,7 +135,7 @@ function generateGUI() {
     let holderStatus = new Holder({
         parent: document.body,
         style: {
-            padding: "1em",
+            margin: "1em",
         }
     });
 
@@ -149,7 +149,7 @@ function generateGUI() {
     let holderIndicator = new Holder({
         parent: holderStatus.element(),
         style: {
-            padding: "1rem 0",
+            padding: "1rem 0 0 0",
             display: "grid",
             gridTemplateColumns: "repeat(4, minmax(3rem, 1fr))",
             gap: "1em",
@@ -191,7 +191,7 @@ function generateGUI() {
     let holderControl = new Holder({
         parent: document.body,
         style: {
-            padding: "2em 1em",
+            margin: "1em",
         }
     });
 
@@ -249,31 +249,38 @@ function generateGUI() {
         }
     });
 
-    let buttonModeSingle = new ClickableButton({
-        // parent: holderCommand.element(),
-        text: "Single Mode",
-        style: buttonStyle,
-        callback: () => {
-            ws_send(WS.SET_MODE_SINGLE, true)
-        }
-    });
+    // let buttonModeSingle = new ClickableButton({
+    //     // parent: holderCommand.element(),
+    //     text: "Single Mode",
+    //     style: buttonStyle,
+    //     callback: () => {
+    //         ws_send(WS.SET_MODE_SINGLE, true)
+    //     }
+    // });
 
-    let buttonModeMulti = new ClickableButton({
-        // parent: holderCommand.element(),
-        text: "Multi Mode",
-        style: buttonStyle,
-        callback: () => {
-            ws_send(WS.SET_MODE_MULTI, true)
-        }
-    });
+    // let buttonModeMulti = new ClickableButton({
+    //     // parent: holderCommand.element(),
+    //     text: "Multi Mode",
+    //     style: buttonStyle,
+    //     callback: () => {
+    //         ws_send(WS.SET_MODE_MULTI, true)
+    //     }
+    // });
 
-    let buttonResetDrive = new ClickableButton({
+    // let buttonResetDrive = new ClickableButton({
+    //     parent: holderCommand.element(),
+    //     text: "Reset Drive",
+    //     style: buttonStyle,
+    //     callback: () => {
+    //         ws_send(WS.RESET_DRIVE, true)
+    //     }
+    // });
+
+    let buttonTrip = new ClickableButton({
         parent: holderCommand.element(),
-        text: "Reset Drive",
+        text: "Trip Status",
         style: buttonStyle,
-        callback: () => {
-            ws_send(WS.RESET_DRIVE, true)
-        }
+        callback: () => {}
     });
 
     let buttonSettings = new ClickableButton({
@@ -283,6 +290,28 @@ function generateGUI() {
         callback: () => {
             location.href = '/setup.html'
         }
+    });
+
+    let holderModbusStatus = new Holder({
+        parent: holderControl.element(),
+        style: {
+            padding: "1em 0 0 0",
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(3rem, 1fr))",
+            gap: "1em",
+        }
+    });
+
+    let indicatorDrive = new Indicator({
+        parent: holderModbusStatus.element(),
+        text: "Drive-HMI Connection",
+        style: indicatorStyle,
+    });
+
+    let indicatorPLC = new Indicator({
+        parent: holderModbusStatus.element(),
+        text: "PLC-HMI Connection",
+        style: indicatorStyle,
     });
 
     let messageHandle = new MessageViewer({ parent: document.body });
@@ -377,15 +406,18 @@ function generateGUI() {
     pubsub.subscribe(PUBSUB.MESSAGE_SUCCESS, (msg) => messageHandle.success(msg.text, msg.duration));
     pubsub.subscribe(PUBSUB.MESSAGE_WARNING, (msg) => messageHandle.warning(msg.text, msg.duration));
     pubsub.subscribe(PUBSUB.MESSAGE_ERROR, (msg) => messageHandle.error(msg.text, msg.duration));
+
+    pubsub.subscribe(WS.PLC_STATUS, (msg) => indicatorPLC.set(msg));
+    pubsub.subscribe(WS.DRIVE_STATUS, (msg) => indicatorDrive.set(msg));
 }
 
 
 function getCurrentValue() {
-    ws_send(WS.GET_DRIVE_DASHBOARD, true);
-    setInterval(() => {
-        setTimeout(() => ws_send(WS.GET_COUNT, true), 0);
-        setTimeout(() => ws_send(WS.GET_PLC_STATUS, true), 200);
-    }, 1000);
+    // ws_send(WS.GET_DRIVE_DASHBOARD, true);
+    // setInterval(() => {
+    //     setTimeout(() => ws_send(WS.GET_COUNT, true), 0);
+    //     setTimeout(() => ws_send(WS.GET_PLC_STATUS, true), 200);
+    // }, 1000);
 }
 
 
@@ -472,6 +504,14 @@ function ws_onMessage(evt) {
         case WS.SET_MODE_SINGLE:
             pubsub.publish(PUBSUB.MODE_SINGLE, parsedEvt.value);
             break;
+
+        case WS.PLC_STATUS:
+            pubsub.publish(WS.PLC_STATUS, parsedEvt.value);
+            break;
+        
+        case WS.DRIVE_STATUS:
+            pubsub.publish(WS.DRIVE_STATUS, parsedEvt.value);
+            break;
     }
 }
       
@@ -514,7 +554,10 @@ const WS = {
     GET_PUNCHING: 'Punching',
     GET_FEEDING: 'Feeding',
 
-    GET_PLC_STATUS: 'PLC_Status',
+    PLC_STATUS: 'PLC_Status',
+    DRIVE_STATUS: 'DRIVE_Status',
+
+    GET_PLC_DASHBOARD: 'PLC_Dashboard',
     GET_DRIVE_DASHBOARD: 'Drive_Dashboard',
     GET_DRIVE_SETTING: 'Drive_Setting',
 
