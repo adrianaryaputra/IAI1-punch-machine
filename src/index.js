@@ -107,7 +107,7 @@ function handleDriveStatus(onlineStatus) {
             })
         }
     } else {
-        statusCounter.PLC = 0;
+        statusCounter.Drive = 0;
         handleSendWebsocket({
             command: WS.DRIVE_STATUS,
             value: onlineStatus,
