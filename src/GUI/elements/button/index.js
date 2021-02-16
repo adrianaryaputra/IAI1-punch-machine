@@ -38,6 +38,18 @@ export class ClickableButton{
         }
     }
 
+    warn(cond) {
+        if(cond == 1){
+            this.warnInterval = setInterval(() => {
+                this.elem.style.backgroundColor = "#FF0";
+                setTimeout(() => {this.elem.style.backgroundColor = this.color}, 500)
+            }, 1000);
+        } else {
+            this.elem.style.backgroundColor = this.color;
+            clearInterval(this.warnInterval);
+        }
+    }
+
     element() {
         return this.elem;
     }

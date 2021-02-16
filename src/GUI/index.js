@@ -146,6 +146,16 @@ function generateGUI() {
     textStatus.style.textAlign = "center";
     holderStatus.element().appendChild(textStatus);
 
+    let holderModbusStatus = new Holder({
+        parent: holderStatus.element(),
+        style: {
+            padding: "1em 0 0 0",
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(3rem, 1fr))",
+            gap: "1em",
+        }
+    });
+
     let holderIndicator = new Holder({
         parent: holderStatus.element(),
         style: {
@@ -163,6 +173,18 @@ function generateGUI() {
         borderRadius: ".5rem",
         textAlign: "center",
     };
+
+    let indicatorDrive = new Indicator({
+        parent: holderModbusStatus.element(),
+        text: "Drive-HMI Connection",
+        style: indicatorStyle,
+    });
+
+    let indicatorPLC = new Indicator({
+        parent: holderModbusStatus.element(),
+        text: "PLC-HMI Connection",
+        style: indicatorStyle,
+    });
 
     let indicatorUncoiler = new Indicator({
         parent: holderIndicator.element(),
@@ -294,28 +316,6 @@ function generateGUI() {
         }
     });
 
-    let holderModbusStatus = new Holder({
-        parent: holderControl.element(),
-        style: {
-            padding: "1em 0 0 0",
-            display: "grid",
-            gridTemplateColumns: "repeat(2, minmax(3rem, 1fr))",
-            gap: "1em",
-        }
-    });
-
-    let indicatorDrive = new Indicator({
-        parent: holderModbusStatus.element(),
-        text: "Drive-HMI Connection",
-        style: indicatorStyle,
-    });
-
-    let indicatorPLC = new Indicator({
-        parent: holderModbusStatus.element(),
-        text: "PLC-HMI Connection",
-        style: indicatorStyle,
-    });
-
     let messageHandle = new MessageViewer({ parent: document.body });
 
 
@@ -410,13 +410,14 @@ function generateGUI() {
 
     pubsub.subscribe(WS.PLC_STATUS, (msg) => indicatorPLC.set(msg));
     pubsub.subscribe(WS.DRIVE_STATUS, (msg) => indicatorDrive.set(msg));
+    pubsub.subscribe(WS.DRIVE_TRIP, (msg) => buttonTrip.warn(msg));
 }
 
 
 function getCurrentValue() {
     ws_send(WS.GET_DRIVE_DASHBOARD, true);
     setInterval(() => {
-        setTimeout(() => ws_send(WS.GET_COUNT, true), 0);
+        setTimeout(() => ws_send(WS.GET_DRIVE_DASHBOARD_UPDATE, true), 0);
         setTimeout(() => ws_send(WS.GET_PLC_DASHBOARD, true), 200);
     }, 1000);
 }
@@ -446,9 +447,9 @@ function ws_onClose(evt) {
 }
       
 function ws_onMessage(evt) {
-    console.log(`WS: ${evt.type}`);
+    // console.log(`WS: ${evt.type}`);
     let parsedEvt = JSON.parse(evt.data);
-    console.log(parsedEvt);
+    // console.log(parsedEvt);
     switch(parsedEvt.command){
         case WS.GET_UNCOILER:
             pubsub.publish(PUBSUB.STATUS_UNCOILER, parsedEvt.value);
@@ -495,7 +496,7 @@ function ws_onMessage(evt) {
             break;
 
         case WS.COMM_ERROR:
-            pubsub.publish(PUBSUB.MESSAGE_ERROR, {text: parsedEvt.value, duration: 2});
+            // pubsub.publish(PUBSUB.MESSAGE_ERROR, {text: `ERROR : ${parsedEvt.value}`, duration: 2});
             break;
 
         case WS.SET_MODE_MULTI:
@@ -512,6 +513,10 @@ function ws_onMessage(evt) {
         
         case WS.DRIVE_STATUS:
             pubsub.publish(WS.DRIVE_STATUS, parsedEvt.value);
+            break;
+
+        case WS.DRIVE_TRIP:
+            pubsub.publish(WS.DRIVE_TRIP, parsedEvt.value);
             break;
     }
 }
@@ -557,9 +562,11 @@ const WS = {
 
     PLC_STATUS: 'PLC_Status',
     DRIVE_STATUS: 'DRIVE_Status',
+    DRIVE_TRIP: 'DRIVE_Trip',
 
     GET_PLC_DASHBOARD: 'PLC_Dashboard',
     GET_DRIVE_DASHBOARD: 'Drive_Dashboard',
+    GET_DRIVE_DASHBOARD_UPDATE: 'Drive_Dashboard_Update',
     GET_DRIVE_SETTING: 'Drive_Setting',
 
     SET_LENGTH: "set_length",

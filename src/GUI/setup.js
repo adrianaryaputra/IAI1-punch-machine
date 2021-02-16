@@ -348,9 +348,9 @@ function ws_onClose(evt) {
 }
       
 function ws_onMessage(evt) {
-    console.log(`WS: ${evt.type}`);
+    // console.log(`WS: ${evt.type}`);
     let parsedEvt = JSON.parse(evt.data);
-    console.log(parsedEvt);
+    // console.log(parsedEvt);
     switch(parsedEvt.command){
         case WS.GET_DISTANCE_MOTOR_TURN:
             pubsub.publish(PUBSUB.DISTANCE_MOTOR_TURN, parsedEvt.value);
@@ -378,7 +378,7 @@ function ws_onMessage(evt) {
             pubsub.publish(PUBSUB.MESSAGE_SUCCESS, {text: "success changing data", duration: 1});
             break;
         case WS.COMM_ERROR:
-            pubsub.publish(PUBSUB.MESSAGE_ERROR, {text: parsedEvt.value, duration: 5});
+            // pubsub.publish(PUBSUB.MESSAGE_ERROR, {text: parsedEvt.value, duration: 5});
             break;
     }
 }

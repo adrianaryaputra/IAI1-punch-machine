@@ -179,6 +179,9 @@ function handleWebsocketMessage(msg) {
             case WS.GET_DRIVE_DASHBOARD:
                 handleDriveDashboard();
                 break;
+            case WS.GET_DRIVE_DASHBOARD_UPDATE:
+                handleDriveDashboardUpdate();
+                break;
             case WS.GET_DRIVE_SETTING:
                 handleDriveSetting();
                 break;
@@ -239,8 +242,8 @@ function handleDriveDashboard() {
                 value: v.data[1],
             });
             handleSendWebsocket({
-                command: WS.PRESET_COUNT,
-                value: v.data[3],
+                command: WS.DRIVE_TRIP,
+                value: v.data[2] == 1 ? false : true,
             });
             handleSendWebsocket({
                 command: WS.GET_COUNT,
@@ -250,6 +253,26 @@ function handleDriveDashboard() {
         })
         .catch((e) => {
             handleErrorCommand(e);
+            handleDriveStatus(false);
+            setTimeout(() => {handleDriveDashboard()}, cfg.RETRY_TIMEOUT);
+        });
+}
+
+
+function handleDriveDashboardUpdate() {
+    drive.readParameter(DRIVE.UPDATE_DASHBOARD)
+        .then(v => {
+            handleSendWebsocket({
+                command: WS.DRIVE_TRIP,
+                value: v.data[0] == 1 ? false : true,
+            });
+            handleSendWebsocket({
+                command: WS.GET_COUNT,
+                value: v.data[1],
+            });
+            handleDriveStatus(true);
+        })
+        .catch((e) => {
             handleDriveStatus(false);
             setTimeout(() => {handleDriveDashboard()}, cfg.RETRY_TIMEOUT);
         });
@@ -409,6 +432,7 @@ const DRIVE = {
     JOG_SPEED: {menu:19, parameter:53},
 
     INIT_DASHBOARD: {menu:18, parameter:1, length:4},
+    UPDATE_DASHBOARD: {menu:18, parameter:3, length:2},
     INIT_SETTING: {menu:18, parameter:5, length:7},
 }
 
@@ -417,9 +441,11 @@ const WS = {
 
     PLC_STATUS: 'PLC_Status',
     DRIVE_STATUS: 'DRIVE_Status',
+    DRIVE_TRIP: 'DRIVE_Trip',
 
     GET_PLC_DASHBOARD: 'PLC_Dashboard',
     GET_DRIVE_DASHBOARD: 'Drive_Dashboard',
+    GET_DRIVE_DASHBOARD_UPDATE: 'Drive_Dashboard_Update',
     GET_DRIVE_SETTING: 'Drive_Setting',
 
     SET_LENGTH: "set_length",
