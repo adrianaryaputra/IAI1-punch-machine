@@ -164,11 +164,14 @@ function handleWebsocketMessage(msg) {
                 handleDefaultSetCommand(DRIVE.SPEED, WS.SET_SPEED, msg.value);
                 break;
             case WS.RESET_COUNT:
-                handleDefaultSetCommand(DRIVE.COUNTER_RESET, WS.RESET_COUNT, msg.value);
-                setTimeout(() => {handleDefaultGetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT)}, 200);
+                handleDefaultSetCommand(DRIVE.COUNTER_RESET, WS.RESET_COUNT, msg.value, () => {
+                    handleDefaultGetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT)
+                });
                 break;
             case WS.PRESET_COUNT:
-                handleDefaultSetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT, msg.value);
+                handleDefaultSetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT, msg.value, () => {
+                    handleDefaultGetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT)
+                });
                 break;
             case WS.SET_THREAD_REVERSE:
                 handleThreadRevCommand();
@@ -316,11 +319,14 @@ function handleDriveSetting() {
 }
 
 
-function handleDefaultSetCommand(parameter, wsCommand, value) {
+function handleDefaultSetCommand(parameter, wsCommand, value, callback = ()=>{}) {
     drive.writeParameter({
         ...parameter, value
     })
-        .then(() => handleSuccessCommand(wsCommand))
+        .then(() => {
+            handleSuccessCommand(wsCommand);
+            callback();
+        })
         .catch(e => {
             setTimeout(() => {handleDefaultSetCommand(parameter, wsCommand, value)}, cfg.RETRY_TIMEOUT);
             handleErrorCommand(e);
