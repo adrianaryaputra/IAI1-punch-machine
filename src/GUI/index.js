@@ -413,11 +413,11 @@ function generateGUI() {
 
 
 function getCurrentValue() {
-    // ws_send(WS.GET_DRIVE_DASHBOARD, true);
-    // setInterval(() => {
-    //     setTimeout(() => ws_send(WS.GET_COUNT, true), 0);
-    //     setTimeout(() => ws_send(WS.GET_PLC_STATUS, true), 200);
-    // }, 1000);
+    ws_send(WS.GET_DRIVE_DASHBOARD, true);
+    setInterval(() => {
+        setTimeout(() => ws_send(WS.GET_COUNT, true), 0);
+        setTimeout(() => ws_send(WS.GET_PLC_STATUS, true), 200);
+    }, 1000);
 }
 
 
