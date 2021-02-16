@@ -252,7 +252,6 @@ function handleDriveDashboard() {
             handleDriveStatus(true);
         })
         .catch((e) => {
-            handleErrorCommand(e);
             handleDriveStatus(false);
             setTimeout(() => {handleDriveDashboard()}, cfg.RETRY_TIMEOUT);
         });
@@ -274,7 +273,6 @@ function handleDriveDashboardUpdate() {
         })
         .catch((e) => {
             handleDriveStatus(false);
-            setTimeout(() => {handleDriveDashboard()}, cfg.RETRY_TIMEOUT);
         });
 }
 
@@ -312,7 +310,7 @@ function handleDriveSetting() {
             });
         })
         .catch((e) => {
-            handleErrorCommand(e);
+            // handleErrorCommand(e);
             setTimeout(() => {handleDriveSetting()}, cfg.RETRY_TIMEOUT);
         });
 }
