@@ -118,6 +118,9 @@ function generateGUI() {
 
     let formLen = new FormElement({
         parent: holderForm.element(),
+        style: {
+            gap: "1em",
+        },
         configs: [
             {
                 id: "distPerMotorTurn",
@@ -194,40 +197,40 @@ function generateGUI() {
     });
 
     let buttonStyle = {
-        marginTop: "1rem",
+        marginTop: "1em",
         fontSize: "2rem",
         textAlign: "center",
         padding: "1rem",
         width: "100%",
     }
 
-    let btnSaveParameter = new ClickableButton({
-        parent: holderForm.element(),
-        text: "Save Parameter",
-        style: buttonStyle,
-        color: "#FFF",
-        callback: () => {
-            // console.log(formLen.get("length"), formLen.parse("length"));
-            // if(formLen.parse("length")){
-            //     ws_send(WS.SET_LENGTH, formLen.get("length"));
-            //     lenSubmit.enable(false);
-            // }
-        }
-    });
+    // let btnSaveParameter = new ClickableButton({
+    //     parent: holderForm.element(),
+    //     text: "Save Parameter",
+    //     style: buttonStyle,
+    //     color: "#FFF",
+    //     callback: () => {
+    //         // console.log(formLen.get("length"), formLen.parse("length"));
+    //         // if(formLen.parse("length")){
+    //         //     ws_send(WS.SET_LENGTH, formLen.get("length"));
+    //         //     lenSubmit.enable(false);
+    //         // }
+    //     }
+    // });
 
-    let btnResetDrive = new ClickableButton({
-        parent: holderForm.element(),
-        text: "Reset Drive",
-        style: buttonStyle,
-        color: "#FFF",
-        callback: () => {
-            // console.log(formLen.get("length"), formLen.parse("length"));
-            // if(formLen.parse("length")){
-            //     ws_send(WS.SET_LENGTH, formLen.get("length"));
-            //     lenSubmit.enable(false);
-            // }
-        }
-    });
+    // let btnResetDrive = new ClickableButton({
+    //     parent: holderForm.element(),
+    //     text: "Reset Drive",
+    //     style: buttonStyle,
+    //     color: "#FFF",
+    //     callback: () => {
+    //         // console.log(formLen.get("length"), formLen.parse("length"));
+    //         // if(formLen.parse("length")){
+    //         //     ws_send(WS.SET_LENGTH, formLen.get("length"));
+    //         //     lenSubmit.enable(false);
+    //         // }
+    //     }
+    // });
 
     let btnBackMainMenu = new ClickableButton({
         parent: holderForm.element(),

@@ -280,7 +280,9 @@ function generateGUI() {
         parent: holderCommand.element(),
         text: "Trip Status",
         style: buttonStyle,
-        callback: () => {}
+        callback: () => {
+            location.href = '/trip.html';
+        }
     });
 
     let buttonSettings = new ClickableButton({
@@ -288,7 +290,7 @@ function generateGUI() {
         text: "Setting",
         style: buttonStyle,
         callback: () => {
-            location.href = '/setup.html'
+            location.href = '/setup.html';
         }
     });
 
@@ -360,7 +362,6 @@ function generateGUI() {
             }
           ],
         language: 'en',
-        // The theme of keyboard => "light" || "dark" || "flat" || "material" || "oldschool"
         theme: 'dark',
         capsLockActive: true,
         allowRealKeyboard: true,
