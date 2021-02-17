@@ -1,1 +1,6 @@
+# Nodejs
 node_modules/
+
+# Nidec Program
+*.opt
+*.compileinfo
