@@ -1,0 +1,37 @@
+.table-default {
+    border-collapse: separate;
+    margin: 25px 0;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    width: 100%;
+    counter-reset: row-num;
+}
+  
+.table-default thead tr {
+    background-color: var(--color-accent-darker);
+    color: #ffffff;
+    text-align: left;
+}
+  
+.table-default th,
+.table-default td {
+    padding: 12px 15px;
+}
+  
+.table-default tbody tr {
+    border-bottom: thin solid #dddddd;
+    background-color: var(--color-accent);
+    counter-increment: row-num;
+}
+  
+.table-default .special{
+    background-color: var(--color-state-danger) !important;
+}
+  
+.table-default tbody tr td:first-child::before {
+    content: counter(row-num);
+}
+  
+.table-default tbody tr:nth-of-type(even) {
+    background-color: var(--color-accent-darker);
+}
