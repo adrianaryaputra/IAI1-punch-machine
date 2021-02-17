@@ -1,7 +1,8 @@
 import {ClickableButton} from './elements/button/index.js'
 import {Table} from './elements/table/index.js'
 import {Holder} from './elements/holder/index.js'
-import {PubSub} from './pubsub/index.js'
+import {PubSub} from './elements/pubsub/index.js'
+import {Indicator} from './elements/indicator/index.js'
 
 var wsUri = `ws://${location.hostname}:${+location.port+1}`;
 var websocket = new WebSocket(wsUri);
@@ -18,6 +19,71 @@ function generateGUI() {
             margin: "1em",
         }
     });
+
+
+
+    let tripTitle = document.createElement('h3');
+    tripTitle.textContent = "Trip Status";
+    tripTitle.style.textAlign = 'center';
+    holderTrip.element().appendChild(tripTitle);
+
+    let holderTripIndicator = new Holder({
+        parent: holderTrip.element(),
+        style: {
+            margin: "1em",
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(3rem, 1fr))",
+            gap: "1em",
+        }
+    });
+
+    let indicatorStyle = {
+        padding: "1rem",
+        fontSize: "2rem",
+        color: "black",
+        borderRadius: ".5rem",
+        textAlign: "center",
+    };
+
+    let okDrive = new Indicator({
+        parent: holderTripIndicator.element(),
+        text: "Drive: Trip",
+        style: indicatorStyle,
+    });
+
+    let okPLC = new Indicator({
+        parent: holderTripIndicator.element(),
+        text: "PLC: Trip",
+        style: indicatorStyle,
+    });
+
+    okPLC.set(true, "PLC: OK");
+
+
+
+    let holderModbusStatus = new Holder({
+        parent: holderTrip.element(),
+        style: {
+            margin: "1em",
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(3rem, 1fr))",
+            gap: "1em",
+        }
+    });
+    
+    let indicatorDrive = new Indicator({
+        parent: holderModbusStatus.element(),
+        text: "Drive-HMI Connection",
+        style: indicatorStyle,
+    });
+
+    let indicatorPLC = new Indicator({
+        parent: holderModbusStatus.element(),
+        text: "PLC-HMI Connection",
+        style: indicatorStyle,
+    });
+
+    
 
     let driveTripTitle = document.createElement('h3');
     driveTripTitle.textContent = "Drive Trip List";
@@ -76,6 +142,9 @@ function generateGUI() {
         driveTripTable.update(driveTripData2table());
     });
 
+    pubsub.subscribe(WS.PLC_STATUS, (msg) => indicatorPLC.set(msg));
+    pubsub.subscribe(WS.DRIVE_STATUS, (msg) => indicatorDrive.set(msg));
+    pubsub.subscribe(WS.DRIVE_TRIP, (msg) => okDrive.set(!msg, "Drive: OK"));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -133,11 +202,22 @@ function ws_send(command, value) {
         value
     }))
 }
+
+function get_trip() {
+    setTimeout(() => {ws_send(WS.GET_DRIVE_TRIP, true)}, 400);
+    setTimeout(() => {ws_send(WS.GET_DRIVE_SUBTRIP, true)}, 1400);
+    // setTimeout(() => {ws_send(WS.GET_DRIVE_TRIP_DATE, true)}, 2400);
+}
       
 function ws_onOpen(evt) {
-    setTimeout(() => {ws_send(WS.GET_DRIVE_TRIP, true)}, 0);
-    setTimeout(() => {ws_send(WS.GET_DRIVE_SUBTRIP, true)}, 1000);
-    setTimeout(() => {ws_send(WS.GET_DRIVE_TRIP_DATE, true)}, 2000);
+
+    get_trip();
+    setInterval(() => get_trip(), 10000);
+
+    setInterval(() => {
+        setTimeout(() => ws_send(WS.GET_DRIVE_DASHBOARD_UPDATE, true), 0);
+        setTimeout(() => ws_send(WS.GET_PLC_DASHBOARD, true), 200);
+    }, 1000);
 }
       
 function ws_onClose(evt) {
@@ -165,4 +245,11 @@ const WS = {
     GET_DRIVE_TRIP: 'Get_Drive_Trip',
     GET_DRIVE_SUBTRIP: 'Get_Drive_Subtrip',
     GET_DRIVE_TRIP_DATE: 'Get_Drive_Trip_Date',
+
+    PLC_STATUS: 'PLC_Status',
+    DRIVE_STATUS: 'DRIVE_Status',
+    DRIVE_TRIP: 'DRIVE_Trip',
+
+    GET_DRIVE_DASHBOARD_UPDATE: 'Drive_Dashboard_Update',
+    GET_PLC_DASHBOARD: 'PLC_Dashboard',
 }

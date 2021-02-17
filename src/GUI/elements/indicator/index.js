@@ -7,8 +7,9 @@ export class Indicator{
         colorTrue = '#0f0',
         style,
     }) {
+        this.text = text;
         this.elem = document.createElement("div");
-        this.elem.textContent = text;
+        this.elem.textContent = this.text;
         
         for (const key in style) {
             this.elem.style[key] = style[key];
@@ -22,9 +23,14 @@ export class Indicator{
         this.set(false);
     }
 
-    set(value){
-        if(value) this.elem.style.backgroundColor = this.colorTrue;
-        else this.elem.style.backgroundColor = this.colorFalse;
+    set(value, content=undefined){
+        if(value){
+            this.elem.style.backgroundColor = this.colorTrue;
+            if(content) this.elem.textContent = content;
+        } else {
+            this.elem.style.backgroundColor = this.colorFalse;
+            if(content) this.elem.textContent = this.text;
+        }
     }
 
 }
