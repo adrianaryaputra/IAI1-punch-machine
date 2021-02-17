@@ -79,7 +79,7 @@ async function runWS() {
 
 
 function handleSendWebsocket(payload) {
-    console.log(payload);
+    // console.log(payload);
     wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(payload));
@@ -222,8 +222,57 @@ function handleWebsocketMessage(msg) {
             case WS.GET_PLC_DASHBOARD:
                 handlePlcGetIndicator();
                 break;
+
+            case WS.SET_UNCOILER:
+                handlePlcSetDefault_M(16, true, msg.command, () => {
+                    setTimeout(() => {
+                        handlePlcSetDefault_M(16, false)
+                    }, 200);
+                });
+                break;
+            
+            case WS.SET_LEVELER:
+                handlePlcSetDefault_M(17, true, msg.command, () => {
+                    setTimeout(() => {
+                        handlePlcSetDefault_M(17, false)
+                    }, 200);
+                });
+                break;
+            
+            case WS.SET_RECOILER:
+                handlePlcSetDefault_M(18, true, msg.command, () => {
+                    setTimeout(() => {
+                        handlePlcSetDefault_M(18, false)
+                    }, 200);
+                });
+                break;
+
+            case WS.SET_FEEDER:
+                handlePlcSetDefault_M(19, true, msg.command, () => {
+                    setTimeout(() => {
+                        handlePlcSetDefault_M(19, false)
+                    }, 200);
+                });
+                break;
         }
     } catch(e) { handleErrorCommand(e) }
+}
+
+
+function handlePlcSetDefault_M(address, value, wsCommand = undefined, callback = ()=>{}) {
+    plc.write_M(address, value)
+        .then(v => {
+            callback()
+            if(wsCommand) handleSendWebsocket({
+                command: wsCommand,
+                value: v,
+            });
+        })
+        .catch(() => {
+            setTimeout(() => {
+                handlePlcSetDefault_M(address, value, wsCommand, callback)
+            }, cfg.RETRY_TIMEOUT);
+        })
 }
 
 
@@ -676,6 +725,11 @@ const WS = {
     SET_THREAD_REVERSE: "set_threadrev",
     SET_MODE_SINGLE: "set_modesingle",
     SET_MODE_MULTI: "set_modemulti",
+
+    SET_UNCOILER: "set-uncoiler",
+    SET_LEVELER: "set-leveler",
+    SET_RECOILER: "set-recoiler",
+    SET_FEEDER: "set-feeder",
 
     GET_LENGTH: "get_length",
     GET_SPEED: "get_speed",

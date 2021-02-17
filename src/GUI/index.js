@@ -186,29 +186,29 @@ function generateGUI() {
         style: indicatorStyle,
     });
 
-    let indicatorUncoiler = new Indicator({
-        parent: holderIndicator.element(),
-        text: "Uncoiler",
-        style: indicatorStyle,
-    });
+    // let indicatorUncoiler = new Indicator({
+    //     parent: holderIndicator.element(),
+    //     text: "Uncoiler",
+    //     style: indicatorStyle,
+    // });
 
-    let indicatorLeveler = new Indicator({
-        parent: holderIndicator.element(),
-        text: "Leveler",
-        style: indicatorStyle,
-    });
+    // let indicatorLeveler = new Indicator({
+    //     parent: holderIndicator.element(),
+    //     text: "Leveler",
+    //     style: indicatorStyle,
+    // });
 
-    let indicatorRecoiler = new Indicator({
-        parent: holderIndicator.element(),
-        text: "Recoiler",
-        style: indicatorStyle,
-    });
+    // let indicatorRecoiler = new Indicator({
+    //     parent: holderIndicator.element(),
+    //     text: "Recoiler",
+    //     style: indicatorStyle,
+    // });
 
-    let indicatorFeeder = new Indicator({
-        parent: holderIndicator.element(),
-        text: "Feeder",
-        style: indicatorStyle,
-    })
+    // let indicatorFeeder = new Indicator({
+    //     parent: holderIndicator.element(),
+    //     text: "Feeder",
+    //     style: indicatorStyle,
+    // })
 
     let holderControl = new Holder({
         parent: document.body,
@@ -224,6 +224,69 @@ function generateGUI() {
     textControl.style.textAlign = "center";
     holderControl.element().appendChild(textControl);
 
+    let buttonStyle = {
+        fontSize: "2rem",
+        textAlign: "center",
+        padding: "1rem",
+        width: "100%",
+    }
+
+    let holderContactor = new Holder({
+        parent: holderControl.element(),
+        style: {
+            padding: "1em 0 0 0",
+            display: "grid",
+            width: "100%",
+            gridTemplateColumns: "repeat(4, minmax(3rem, 1fr))",
+            gap: "1em",
+            justifyContent: "center",
+        }
+    });
+
+    let buttonUncoiler = new ClickableButton({
+        parent: holderContactor.element(),
+        text: "Uncoiler",
+        color: "#F00",
+        style: buttonStyle,
+        callback: () => {
+            buttonUncoiler.enable(false);
+            ws_send(WS.SET_UNCOILER, true)
+        }
+    });
+
+    let buttonLeveler = new ClickableButton({
+        parent: holderContactor.element(),
+        text: "Leveler",
+        color: "#F00",
+        style: buttonStyle,
+        callback: () => {
+            buttonLeveler.enable(false);
+            ws_send(WS.SET_LEVELER, true)
+        }
+    });
+
+    let buttonRecoiler = new ClickableButton({
+        parent: holderContactor.element(),
+        text: "Recoiler",
+        color: "#F00",
+        style: buttonStyle,
+        callback: () => {
+            buttonRecoiler.enable(false);
+            ws_send(WS.SET_RECOILER, true)
+        }
+    });
+
+    let buttonFeeder = new ClickableButton({
+        parent: holderContactor.element(),
+        text: "Feeder",
+        color: "#F00",
+        style: buttonStyle,
+        callback: () => {
+            buttonFeeder.enable(false);
+            ws_send(WS.SET_FEEDER, true)
+        }
+    });
+    
     let holderThread = new Holder({
         parent: holderControl.element(),
         style: {
@@ -235,13 +298,6 @@ function generateGUI() {
             justifyContent: "center",
         }
     });
-
-    let buttonStyle = {
-        fontSize: "2rem",
-        textAlign: "center",
-        padding: "1rem",
-        width: "100%",
-    }
 
     let buttonThreadRev = new ClickableButton({
         parent: holderThread.element(),
@@ -270,33 +326,6 @@ function generateGUI() {
             gap: "1em",
         }
     });
-
-    // let buttonModeSingle = new ClickableButton({
-    //     // parent: holderCommand.element(),
-    //     text: "Single Mode",
-    //     style: buttonStyle,
-    //     callback: () => {
-    //         ws_send(WS.SET_MODE_SINGLE, true)
-    //     }
-    // });
-
-    // let buttonModeMulti = new ClickableButton({
-    //     // parent: holderCommand.element(),
-    //     text: "Multi Mode",
-    //     style: buttonStyle,
-    //     callback: () => {
-    //         ws_send(WS.SET_MODE_MULTI, true)
-    //     }
-    // });
-
-    // let buttonResetDrive = new ClickableButton({
-    //     parent: holderCommand.element(),
-    //     text: "Reset Drive",
-    //     style: buttonStyle,
-    //     callback: () => {
-    //         ws_send(WS.RESET_DRIVE, true)
-    //     }
-    // });
 
     let buttonTrip = new ClickableButton({
         parent: holderCommand.element(),
@@ -386,10 +415,10 @@ function generateGUI() {
     pubsub.subscribe(PUBSUB.SPEED, (msg) => formLen.set({speed: [msg]}));
     pubsub.subscribe(PUBSUB.COUNT, (msg) => formLen.set({count: [msg]}));
 
-    pubsub.subscribe(PUBSUB.STATUS_UNCOILER, (msg) => indicatorUncoiler.set(msg));
-    pubsub.subscribe(PUBSUB.STATUS_LEVELER, (msg) => indicatorLeveler.set(msg));
-    pubsub.subscribe(PUBSUB.STATUS_RECOILER, (msg) => indicatorRecoiler.set(msg));
-    pubsub.subscribe(PUBSUB.STATUS_FEEDER, (msg) => indicatorFeeder.set(msg));
+    pubsub.subscribe(PUBSUB.STATUS_UNCOILER, (msg) => buttonUncoiler.active(msg ? 1:0));
+    pubsub.subscribe(PUBSUB.STATUS_LEVELER, (msg) => buttonLeveler.active(msg ? 1:0));
+    pubsub.subscribe(PUBSUB.STATUS_RECOILER, (msg) => buttonRecoiler.active(msg ? 1:0));
+    pubsub.subscribe(PUBSUB.STATUS_FEEDER, (msg) => buttonFeeder.active(msg ? 1:0));
 
     pubsub.subscribe(PUBSUB.THREAD_FWD, (msg) => buttonThreadFwd.active(msg));
     pubsub.subscribe(PUBSUB.THREAD_REV, (msg) => buttonThreadRev.active(msg));
@@ -411,6 +440,11 @@ function generateGUI() {
     pubsub.subscribe(WS.PLC_STATUS, (msg) => indicatorPLC.set(msg));
     pubsub.subscribe(WS.DRIVE_STATUS, (msg) => indicatorDrive.set(msg));
     pubsub.subscribe(WS.DRIVE_TRIP, (msg) => buttonTrip.warn(msg));
+
+    pubsub.subscribe(WS.SET_UNCOILER, (msg) => buttonUncoiler.enable(true));
+    pubsub.subscribe(WS.SET_LEVELER, (msg) => buttonLeveler.enable(true));
+    pubsub.subscribe(WS.SET_RECOILER, (msg) => buttonRecoiler.enable(true));
+    pubsub.subscribe(WS.SET_FEEDER, (msg) => buttonFeeder.enable(true));
 }
 
 
@@ -475,10 +509,6 @@ function ws_onMessage(evt) {
             pubsub.publish(PUBSUB.LENGTH, parsedEvt.value);
             break;
 
-        case WS.PRESET_COUNT:
-            pubsub.publish(WS.PRESET_COUNT, parsedEvt.value);
-            break;
-
         case WS.GET_SPEED:
             pubsub.publish(PUBSUB.SPEED, parsedEvt.value);
             break;
@@ -507,17 +537,8 @@ function ws_onMessage(evt) {
             pubsub.publish(PUBSUB.MODE_SINGLE, parsedEvt.value);
             break;
 
-        case WS.PLC_STATUS:
-            pubsub.publish(WS.PLC_STATUS, parsedEvt.value);
-            break;
-        
-        case WS.DRIVE_STATUS:
-            pubsub.publish(WS.DRIVE_STATUS, parsedEvt.value);
-            break;
-
-        case WS.DRIVE_TRIP:
-            pubsub.publish(WS.DRIVE_TRIP, parsedEvt.value);
-            break;
+        default:
+            pubsub.publish(parsedEvt.command, parsedEvt.value);
     }
 }
       
@@ -559,6 +580,11 @@ const WS = {
     GET_FEEDER: 'Feeder',
     GET_PUNCHING: 'Punching',
     GET_FEEDING: 'Feeding',
+
+    SET_UNCOILER: "set-uncoiler",
+    SET_LEVELER: "set-leveler",
+    SET_RECOILER: "set-recoiler",
+    SET_FEEDER: "set-feeder",
 
     PLC_STATUS: 'PLC_Status',
     DRIVE_STATUS: 'DRIVE_Status',
