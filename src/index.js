@@ -16,11 +16,11 @@ app.listen(cfg.GUI_PORT, () => {
     console.log(`listening on port ${cfg.GUI_PORT}`);
 });
 
+var client;
 var drive = new Drive_CT_M701({
     modbusId: cfg.DRIVE_ID,
     modbusTimeout: cfg.MODBUS_TIMEOUT,
 });
-
 var plc = new PLC_FX3U({
     modbusId: cfg.PLC_ID,
     modbusTimeout: cfg.MODBUS_TIMEOUT
@@ -37,11 +37,11 @@ var statusCounter = {
 
 async function runModbus() {
     try {
-
+        console.log("connecting to modbus");
         modbusSerialHandler = await new SerialHandler({ baudRate: cfg.MODBUS_BAUD, stopBits: cfg.MODBUS_STOPBIT}).init();
         modbusPort = modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
         console.log(modbusPort);
-        const client = new ModbusRTU(modbusPort);
+        client = new ModbusRTU(modbusPort);
         client.open(() => console.log("modbus port OPEN"));
         drive.setClient(client);
         plc.setClient(client);
@@ -49,6 +49,16 @@ async function runModbus() {
         handlePLCStatus(false);
         handleDriveStatus(false);
         setTimeout(() => runModbus(), 5000); 
+    }
+}
+
+
+function checkIfBothOffline() {
+    if( statusCounter.PLC > cfg.STATUS_RETRY_COUNT && 
+        statusCounter.Drive > cfg.STATUS_RETRY_COUNT && 
+        client != undefined){
+            client.close(runModbus);
+            client = undefined;
     }
 }
 
@@ -85,7 +95,8 @@ function handlePLCStatus(onlineStatus) {
             handleSendWebsocket({
                 command: WS.PLC_STATUS,
                 value: onlineStatus,
-            })
+            });
+            checkIfBothOffline();
         }
     } else {
         statusCounter.PLC = 0;
@@ -104,7 +115,8 @@ function handleDriveStatus(onlineStatus) {
             handleSendWebsocket({
                 command: WS.DRIVE_STATUS,
                 value: onlineStatus,
-            })
+            });
+            checkIfBothOffline();
         }
     } else {
         statusCounter.Drive = 0;

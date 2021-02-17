@@ -30,7 +30,7 @@ function generateGUI() {
             "Trip",
             "Sub",
             "Description",
-            "Time"
+            // "Time"
         ],
         contentSize: 10,
         autonum: true,
@@ -109,7 +109,7 @@ function driveTripData2table(size=10) {
             driveTripData.trip[idx],
             driveTripData.sub[idx],
             driveTripDescription[driveTripData.trip[idx]] ? driveTripDescription[driveTripData.trip[idx]].name : 'undefined',
-            `${driveTripData.date[idx]} at ${driveTripData.time[idx]}`
+            // `${driveTripData.date[idx]} at ${driveTripData.time[idx]}`
         ]
     });
 
