@@ -25,8 +25,8 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("length"), formLen.parse("length"));
             if(formLen.parse("length")){
-                ws_send(WS.SET_LENGTH, formLen.get("length"));
                 lenSubmit.enable(false);
+                ws_send(WS.SET_LENGTH, formLen.get("length"));
             }
         }
     });
@@ -38,12 +38,12 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("feedLength"), formLen.parse("feedLength"));
             if(formLen.parse("feedLength")){
+                feedLenSubmit.enable(false);
                 ws_send(WS.SET_FEED_LENGTH, [
                     formLen.get("length"),
                     formLen.get("feedLength")
                 ]);
                 formLen.set({length: [formLen.get("feedLength")]});
-                feedLenSubmit.enable(false);
             }
         }
     });
@@ -55,8 +55,8 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("speed"), formLen.parse("speed"));
             if(formLen.parse("speed")){
-                ws_send(WS.SET_SPEED, formLen.get("speed"));
                 speedSubmit.enable(false);
+                ws_send(WS.SET_SPEED, formLen.get("speed"));
             }
         }
     });
@@ -440,6 +440,7 @@ function generateGUI() {
     pubsub.subscribe(WS.PLC_STATUS, (msg) => indicatorPLC.set(msg));
     pubsub.subscribe(WS.DRIVE_STATUS, (msg) => indicatorDrive.set(msg));
     pubsub.subscribe(WS.DRIVE_TRIP, (msg) => buttonTrip.warn(msg));
+    pubsub.subscribe(WS.PLC_RUN, (msg) => buttonTrip.warn(!msg))
 
     pubsub.subscribe(WS.SET_UNCOILER, (msg) => buttonUncoiler.enable(true));
     pubsub.subscribe(WS.SET_LEVELER, (msg) => buttonLeveler.enable(true));
@@ -453,6 +454,7 @@ function getCurrentValue() {
     setInterval(() => {
         setTimeout(() => ws_send(WS.GET_DRIVE_DASHBOARD_UPDATE, true), 0);
         setTimeout(() => ws_send(WS.GET_PLC_DASHBOARD, true), 200);
+        setTimeout(() => ws_send(WS.PLC_RUN, true), 400);
     }, 1000);
 }
 
@@ -587,6 +589,7 @@ const WS = {
     SET_FEEDER: "set-feeder",
 
     PLC_STATUS: 'PLC_Status',
+    PLC_RUN: 'PLC_Run',
     DRIVE_STATUS: 'DRIVE_Status',
     DRIVE_TRIP: 'DRIVE_Trip',
 

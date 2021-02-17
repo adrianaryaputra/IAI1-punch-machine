@@ -254,6 +254,11 @@ function handleWebsocketMessage(msg) {
                     }, 200);
                 });
                 break;
+            
+            case WS.PLC_RUN:
+                handlePlcGetDefault_M(32, 1, msg.command, console.log)
+                break;
+
         }
     } catch(e) { handleErrorCommand(e) }
 }
@@ -262,17 +267,38 @@ function handleWebsocketMessage(msg) {
 function handlePlcSetDefault_M(address, value, wsCommand = undefined, callback = ()=>{}) {
     plc.write_M(address, value)
         .then(v => {
-            callback()
+            callback(v)
             if(wsCommand) handleSendWebsocket({
                 command: wsCommand,
                 value: v,
             });
+            handlePLCStatus(true);
         })
         .catch(() => {
+            handlePLCStatus(false);
             setTimeout(() => {
                 handlePlcSetDefault_M(address, value, wsCommand, callback)
             }, cfg.RETRY_TIMEOUT);
+        });
+}
+
+
+function handlePlcGetDefault_M(address, length, wsCommand, callback = ()=>{}) {
+    plc.read_M(address, length)
+        .then(v => {
+            callback(v)
+            handleSendWebsocket({
+                command: wsCommand,
+                value: v,
+            });
+            handlePLCStatus(true);
         })
+        .catch(() => {
+            handlePLCStatus(false);
+            setTimeout(() => {
+                handlePlcGetDefault_M(address, length, wsCommand, callback)
+            }, cfg.RETRY_TIMEOUT);
+        });
 }
 
 
@@ -705,6 +731,7 @@ const DRIVE = {
 const WS = {
 
     PLC_STATUS: 'PLC_Status',
+    PLC_RUN: 'PLC_Run',
     DRIVE_STATUS: 'DRIVE_Status',
     DRIVE_TRIP: 'DRIVE_Trip',
 

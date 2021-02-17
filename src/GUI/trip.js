@@ -53,11 +53,9 @@ function generateGUI() {
 
     let okPLC = new Indicator({
         parent: holderTripIndicator.element(),
-        text: "PLC: Trip",
+        text: "PLC: Stop",
         style: indicatorStyle,
     });
-
-    okPLC.set(true, "PLC: OK");
 
 
 
@@ -145,6 +143,7 @@ function generateGUI() {
     pubsub.subscribe(WS.PLC_STATUS, (msg) => indicatorPLC.set(msg));
     pubsub.subscribe(WS.DRIVE_STATUS, (msg) => indicatorDrive.set(msg));
     pubsub.subscribe(WS.DRIVE_TRIP, (msg) => okDrive.set(!msg, "Drive: OK"));
+    pubsub.subscribe(WS.PLC_RUN, (msg) => okPLC.set(msg.data[0], "PLC: OK"));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -216,7 +215,7 @@ function ws_onOpen(evt) {
 
     setInterval(() => {
         setTimeout(() => ws_send(WS.GET_DRIVE_DASHBOARD_UPDATE, true), 0);
-        setTimeout(() => ws_send(WS.GET_PLC_DASHBOARD, true), 200);
+        setTimeout(() => ws_send(WS.PLC_RUN, true), 200);
     }, 1000);
 }
       
@@ -247,6 +246,7 @@ const WS = {
     GET_DRIVE_TRIP_DATE: 'Get_Drive_Trip_Date',
 
     PLC_STATUS: 'PLC_Status',
+    PLC_RUN: 'PLC_Run',
     DRIVE_STATUS: 'DRIVE_Status',
     DRIVE_TRIP: 'DRIVE_Trip',
 

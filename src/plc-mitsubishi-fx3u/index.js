@@ -38,19 +38,15 @@ module.exports = class PLC_FX3U{
 
     async read_M(number, length=1) {
         this.configureID();
-        if(number>=0 && number<=7679)
+        if(number>=0 && number<=8511)
             return this.modbusClient.readCoils(number, length);
-        if(number>=8000 && number<=8511)
-            return this.modbusClient.readCoils(number-320, length);
         return
     }
 
     async write_M(number, bool) {
         this.configureID();
-        if(number>=0 && number<=7679)
+        if(number>=0 && number<=8511)
             return this.modbusClient.writeCoil(number, bool);
-        if(number>=8000 && number<=8511)
-            return this.modbusClient.writeCoil(number-320, bool);
         return
     }
 
