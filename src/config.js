@@ -6,6 +6,7 @@ module.exports = Object.freeze({
     MODBUS_STOPBIT: 2,
     MODBUS_SERIALNAME: 'FTDI',
     MODBUS_TIMEOUT: 2000,
+    MODBUS_SEND_INTERVAL: 100,
     RETRY_TIMEOUT: 500,
 
     STATUS_RETRY_COUNT: 5,
