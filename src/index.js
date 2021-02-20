@@ -40,8 +40,20 @@ async function runModbus() {
 
         // setInterval(() => plc.read({ ...ADDRESS.PLC_INDICATOR }), 1000);
         // setInterval(() => drive.readParameter(ADDRESS.UPDATE_DASHBOARD), 1000);
-        drive.readParameter(ADDRESS.LENGTH)
-        // drive.readParameter(ADDRESS.GET_TRIP_DATE)
+        // drive.readParameter(ADDRESS.LENGTH)
+        
+        // drive.readParameter(ADDRESS.GET_TRIP_DATE, (err, res) => {
+        //     if(err) console.error(`ERROR: ${err}`)
+        //     if(res) console.log(`SUCCESS: ${res}`)
+        // })
+
+        plc.read({
+            ...ADDRESS.PLC_INDICATOR, 
+            callback:(err, res) => {
+                if(err) console.error("ERROR:", err)
+                if(res) console.log("SUCCESS:", res)
+            }
+        })
 
     } catch(e) {
         console.log(e);
@@ -72,5 +84,5 @@ const ADDRESS = {
     GET_TRIP_DATE: {menu:10, parameter:41, length:20},
     GET_SUBTRIP: {menu:10, parameter:70, length:10},
 
-    PLC_INDICATOR: {type:plc.type.M, address:20, length:1},
+    PLC_INDICATOR: {type:plc.type.M, address:20, length:2},
 }

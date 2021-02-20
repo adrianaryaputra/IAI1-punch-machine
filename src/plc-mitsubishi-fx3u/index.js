@@ -59,8 +59,7 @@ module.exports = class PLC_FX3U extends ModbusSlave{
         type,
         address,
         length,
-        callbackSuccess = ()=>{}, 
-        callbackFail = ()=>{}
+        callback = ()=>{}, 
     }) {
         switch(type) {
             case this.type.M:
@@ -75,8 +74,7 @@ module.exports = class PLC_FX3U extends ModbusSlave{
                     this._readBits({
                         address,
                         length,
-                        callbackSuccess,
-                        callbackFail,
+                        callback,
                     });
                 }
                 break;
@@ -102,17 +100,15 @@ module.exports = class PLC_FX3U extends ModbusSlave{
     _readBits({
         address,
         length,
-        callbackSuccess = ()=>{}, 
-        callbackFail = ()=>{}
+        callback = ()=>{},
     }) {
         this.handler.send({
             modbusSendCommand: this.command.readCoils,
             modbusSendArgs: [
                 address, 
-                length
+                length*8 // length in byte
             ],
-            modbusCallbackSuccess: callbackSuccess,
-            modbusCallbackFail: callbackFail,
+            modbusCallback: callback,
             modbusId: this.id,
             priority: 2
         })
@@ -121,8 +117,7 @@ module.exports = class PLC_FX3U extends ModbusSlave{
     _readBytes({
         address,
         length,
-        callbackSuccess = ()=>{}, 
-        callbackFail = ()=>{}
+        callback = ()=>{}, 
     }) {
         this.handler.send({
             modbusSendCommand: this.command.readHoldingRegisters,
@@ -130,8 +125,7 @@ module.exports = class PLC_FX3U extends ModbusSlave{
                 address, 
                 length
             ],
-            modbusCallbackSuccess: callbackSuccess,
-            modbusCallbackFail: callbackFail,
+            modbusCallback: callback,
             modbusId: this.id,
             priority: 2
         })
@@ -142,8 +136,7 @@ module.exports = class PLC_FX3U extends ModbusSlave{
         type,
         address,
         value,
-        callbackSuccess = ()=>{}, 
-        callbackFail = ()=>{}
+        callback = ()=>{},
     }) {
         switch(type) {
             case this.type.M:
@@ -158,8 +151,7 @@ module.exports = class PLC_FX3U extends ModbusSlave{
                     this._writeBit({
                         address,
                         value,
-                        callbackSuccess,
-                        callbackFail,
+                        callback,
                     });
                 }
                 break;
@@ -174,8 +166,7 @@ module.exports = class PLC_FX3U extends ModbusSlave{
                     this._writeByte({
                         address,
                         value,
-                        callbackSuccess,
-                        callbackFail,
+                        callback,
                     });
                 }
                 break;
@@ -185,8 +176,7 @@ module.exports = class PLC_FX3U extends ModbusSlave{
     _writeBit({
         address,
         value,
-        callbackSuccess = ()=>{}, 
-        callbackFail = ()=>{}
+        callback = ()=>{},
     }) {
         this.handler.send({
             modbusSendCommand: this.command.writeCoil,
@@ -194,8 +184,7 @@ module.exports = class PLC_FX3U extends ModbusSlave{
                 address, 
                 value
             ],
-            modbusCallbackSuccess: callbackSuccess,
-            modbusCallbackFail: callbackFail,
+            modbusCallback: callback,
             modbusId: this.id,
             priority: 1
         })
@@ -204,8 +193,7 @@ module.exports = class PLC_FX3U extends ModbusSlave{
     _writeByte({
         address,
         value,
-        callbackSuccess = ()=>{}, 
-        callbackFail = ()=>{}
+        callback = ()=>{},
     }) {
         this.handler.send({
             modbusSendCommand: this.command.writeRegister,
@@ -213,8 +201,7 @@ module.exports = class PLC_FX3U extends ModbusSlave{
                 address, 
                 value
             ],
-            modbusCallbackSuccess: callbackSuccess,
-            modbusCallbackFail: callbackFail,
+            modbusCallback: callback,
             modbusId: this.id,
             priority: 1
         })
