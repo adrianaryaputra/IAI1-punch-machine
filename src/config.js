@@ -12,4 +12,5 @@ module.exports = Object.freeze({
 
     DRIVE_ID: 1,
     PLC_ID: 2,
+    STATE_UPDATE_INTERVAL: 1000,
 })

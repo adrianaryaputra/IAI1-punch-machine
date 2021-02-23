@@ -6,6 +6,7 @@
 //     - modbus-serial
 
 const { ModbusSlave } = require("../handler-modbus");
+const tripCode = require("./trip-code.json");
 module.exports = class Drive_CT_M70X extends ModbusSlave{
 
     constructor({
@@ -18,12 +19,14 @@ module.exports = class Drive_CT_M70X extends ModbusSlave{
             modbusId,
             modbusTimeout,
         });
+        this.tripCode = tripCode;
     }
 
     readParameter({
         menu, 
         parameter, 
-        length = 1, 
+        length = 1,
+        priority = 2,
         callback = (error, success) => {},
     }) {
         this.handler.send({
@@ -34,7 +37,7 @@ module.exports = class Drive_CT_M70X extends ModbusSlave{
             ],
             modbusCallback: callback,
             modbusId: this.id,
-            priority: 2
+            priority
         });
     }
 
@@ -42,6 +45,7 @@ module.exports = class Drive_CT_M70X extends ModbusSlave{
         menu, 
         parameter, 
         value = 1, 
+        priority = 1,
         callback = (error, success) => {},
     }) {
         this.handler.send({
@@ -52,7 +56,7 @@ module.exports = class Drive_CT_M70X extends ModbusSlave{
             ],
             modbusCallback: callback,
             modbusId: this.id,
-            priority: 1
+            priority
         });
     }
 
