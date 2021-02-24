@@ -70,16 +70,8 @@ export class ClickableButton{
         this.elem.style.border = 'none';
         this.elem.style.borderRadius = '.5rem';
         this.elem.style.fontSize = "1rem !important";
-
-        this.elem.addEventListener("mouseover", () => {
-            this.elem.style.boxShadow = "0 0 1rem #FFF";
-            this.elem.style.cursor = "pointer";
-        });
-
-        this.elem.addEventListener("mouseleave", () => {
-            this.elem.style.boxShadow = "none";
-            this.elem.style.cursor = "auto";
-        })
+        this.elem.style.boxShadow = "0 0 1rem #AAA";
+        this.elem.style.cursor = "pointer";
     }
 
 }

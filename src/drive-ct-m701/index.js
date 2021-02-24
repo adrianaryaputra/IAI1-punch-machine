@@ -60,6 +60,50 @@ module.exports = class Drive_CT_M70X extends ModbusSlave{
         });
     }
 
+    toggleParameter({
+        menu,
+        parameter,
+        toggleOn = 1,
+        toggleOff = 0,
+        priority = 1,
+        callback = (error, success) => {},
+    }) {
+        // to toggle we need to read the data in parameter 
+        // then set the invert of it.
+
+        // declare the set value function
+        const setValue = (error, currentValue) => {
+            if(currentValue) {
+                let valueToSend;
+                if(currentValue == toggleOn) valueToSend = toggleOff;
+                else valueToSend = toggleOn;
+                this.handler.send({
+                    modbusSendCommand: this.command.writeRegister,
+                    modbusSendArgs: [
+                        this._findAddress({menu, parameter}), 
+                        valueToSend
+                    ],
+                    modbusCallback: callback,
+                    modbusId: this.id,
+                    priority
+                });
+            }
+            if(error) callback(error, currentValue);
+        }
+
+        // read current data
+        this.handler.send({
+            modbusSendCommand: this.command.readHoldingRegisters,
+            modbusSendArgs: [
+                this._findAddress({menu, parameter}), 
+                1 //length always 1
+            ],
+            modbusCallback: (error, val) => this.setValue(error, val),
+            modbusId: this.id,
+            priority
+        });
+    }
+
     saveParameter({
         callback = (error, success) => {},
     }) {

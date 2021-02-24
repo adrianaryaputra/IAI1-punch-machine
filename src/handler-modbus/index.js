@@ -38,7 +38,7 @@ class ModbusHandler {
 
 
     close(next) {
-        this.connection.close(next);
+        // this.connection.close(next);
         this.isOpen = false;
         clearInterval(this.modbusSender);
     }
@@ -55,6 +55,7 @@ class ModbusHandler {
         _chunkBuffer = new Array(),
         _chunkCallback = ()=>{},
     }) {
+
         // chunking
         let chunks = this._modbusChunking({
             modbusId,
@@ -70,8 +71,10 @@ class ModbusHandler {
         let similar = this.messageBuffer.filter((obj) => (
             obj.modbusId == modbusId &&
             obj.modbusSendCommand == modbusSendCommand &&
-            obj.modbusSendArgs.join('-') == modbusSendArgs.join('-')
+            // obj.modbusRetryCount == modbusRetryCount &&
+            JSON.stringify(obj.modbusSendArgs) == JSON.stringify(modbusSendArgs)
         ))
+
         // do not add to buffer if object already exist in buffer
         if(similar.length == 0) {
             this.messageBuffer.push(chunks);
@@ -81,6 +84,9 @@ class ModbusHandler {
 
 
     _modbusSend() {
+
+        // console.log(this.messageBuffer)
+
         if(this.messageBuffer) {
             this.messageBuffer.sort((a,b) => a.modbusPriority - b.modbusPriority);
             let msg = this.messageBuffer.shift();
@@ -167,12 +173,13 @@ class ModbusHandler {
                                 modbusId,
                                 modbusSendCommand,
                                 modbusSendArgs: [address+MODBUS_CHUNK_SIZE, vals-MODBUS_CHUNK_SIZE],
-                                modbusPriority: 0,
+                                modbusPriority,
                                 modbusCallback,
                                 _chunkBuffer,
                                 _chunkCallback
                             })
                         }
+                        if(error && modbusRetryCount == 0) modbusCallback(error, success);
                     };
                     return new Object({
                         modbusId,
@@ -201,7 +208,7 @@ class ModbusHandler {
                                     modbusId,
                                     modbusSendCommand,
                                     modbusSendArgs: [address+MODBUS_CHUNK_SIZE, vals.slice(4)],
-                                    modbusPriority: 0,
+                                    modbusPriority,
                                     modbusCallback,
                                     _chunkBuffer: _chunkBuffer,
                                     _chunkCallback
@@ -233,7 +240,6 @@ class ModbusHandler {
             modbusCallback,
             _chunkBuffer,
             _chunkCallback: (error, success) => {
-
                 if(success) {
                     _chunkBuffer.push(success);
                     // flatten the chunkBuffer
@@ -242,9 +248,8 @@ class ModbusHandler {
                         if(value.state !== undefined) return reducer.push(value.state);
                     }, []);
                 }
-
-                if(success || (error && modbusRetryCount == 0)) modbusCallback(error, success);
-
+                if(success || (error && modbusRetryCount == 0))
+                    modbusCallback(error, success);
             }
         });
     }
@@ -253,6 +258,7 @@ class ModbusHandler {
 
     _handleChunkCallback(msg, error, data, chunkCallback) {
         if(error) {
+            // console.log("retry", msg.modbusId, msg.modbusRetryCount)
             msg.modbusRetryCount -= 1;
             if(msg.modbusRetryCount >= 0) this.send(msg);
         };

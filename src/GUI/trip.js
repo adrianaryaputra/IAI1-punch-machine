@@ -22,9 +22,30 @@ function generateGUI() {
 
 
 
+    let buttonStyle = {
+        marginBottom: "1em",
+        fontSize: "2rem",
+        textAlign: "center",
+        padding: "1rem",
+        width: "100%",
+    }
+
+    let btnBackMainMenu = new ClickableButton({
+        parent: holderTrip.element(),
+        text: "Back to Main Menu",
+        style: buttonStyle,
+        color: "#FFF",
+        callback: () => {
+            location.href = location.origin;
+        }
+    });
+
+
+
     let tripTitle = document.createElement('h3');
     tripTitle.textContent = "Trip Status";
     tripTitle.style.textAlign = 'center';
+    tripTitle.style.marginTop = '1em';
     holderTrip.element().appendChild(tripTitle);
 
     let holderTripIndicator = new Holder({
@@ -86,6 +107,7 @@ function generateGUI() {
     let driveTripTitle = document.createElement('h3');
     driveTripTitle.textContent = "Drive Trip List";
     driveTripTitle.style.textAlign = 'center';
+    driveTripTitle.style.marginTop = '2em';
     holderTrip.element().appendChild(driveTripTitle);
 
     let driveTripTable = new Table({
@@ -101,49 +123,53 @@ function generateGUI() {
     });
 
 
-    let buttonStyle = {
-        marginTop: "1em",
-        fontSize: "2rem",
-        textAlign: "center",
-        padding: "1rem",
-        width: "100%",
-    }
 
-    let btnBackMainMenu = new ClickableButton({
+    let modbusErrorTitle = document.createElement('h3');
+    modbusErrorTitle.textContent = "Modbus Error List";
+    modbusErrorTitle.style.textAlign = 'center';
+    modbusErrorTitle.style.marginTop = '2em';
+    holderTrip.element().appendChild(modbusErrorTitle);
+
+    let modbusErrorTable = new Table({
         parent: holderTrip.element(),
-        text: "Back to Main Menu",
-        style: buttonStyle,
-        color: "#FFF",
-        callback: () => {
-            location.href = location.origin;
-        }
+        header: [
+            "Error Message",
+            "Time",
+        ],
+        contentSize: 10,
+        autonum: true,
     });
 
-    fetch("./etc/CT-M701-trip-code.json")
-        .then(response => {
-            return response.json();
-        })
-        .then(data => driveTripDescription = data);
 
-    pubsub.subscribe(WS.GET_DRIVE_TRIP, (d) => { 
+
+    pubsub.subscribe(WS.DRIVE_GET_TRIP, (d) => { 
         driveTripData.trip = d;
         driveTripTable.update(driveTripData2table());
     });
 
-    pubsub.subscribe(WS.GET_DRIVE_SUBTRIP, (d) => { 
+    pubsub.subscribe(WS.DRIVE_GET_SUBTRIP, (d) => { 
         driveTripData.sub = d;
         driveTripTable.update(driveTripData2table());
     });
 
-    pubsub.subscribe(WS.GET_DRIVE_TRIP_DATE, (d) => { 
+    pubsub.subscribe(WS.DRIVE_GET_TRIP_DATE, (d) => { 
         driveTripData.datetime = d;
         driveTripTable.update(driveTripData2table());
     });
 
-    pubsub.subscribe(WS.PLC_STATUS, (msg) => indicatorPLC.set(msg));
-    pubsub.subscribe(WS.DRIVE_STATUS, (msg) => indicatorDrive.set(msg));
-    pubsub.subscribe(WS.DRIVE_TRIP, (msg) => okDrive.set(!msg, "Drive: OK"));
-    pubsub.subscribe(WS.PLC_RUN, (msg) => okPLC.set(msg.data[0], "PLC: OK"));
+    pubsub.subscribe(WS.MODBUS_ERROR_LIST, (e) => {
+        modbusErrorTable.update(
+            objArray2Table(e.map(d => ({
+                ...d, 
+                timestamp: new Date(d.timestamp).toLocaleString("id-ID")
+            })))
+        );
+    })
+
+    pubsub.subscribe(WS.PLC_GET_MODBUS_STATS, (msg) => indicatorPLC.set(msg));
+    pubsub.subscribe(WS.DRIVE_GET_MODBUS_STATS, (msg) => indicatorDrive.set(msg));
+    pubsub.subscribe(WS.DRIVE_GET_TRIP_FLAG, (msg) => okDrive.set(msg, "Drive: OK"));
+    pubsub.subscribe(WS.PLC_GET_TRIP_FLAG, (msg) => okPLC.set(msg, "PLC: OK"));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -188,6 +214,18 @@ function driveTripData2table(size=10) {
 }
 
 
+function objArray2Table(data=[{}]) {
+    let rowArray = Array.from(Array(data.length).keys());
+    let content = data.map((obj) => {
+        return [ ...Object.values(obj) ]
+    });
+    return {
+        rowArray: rowArray,
+        contentArray: content,
+    }
+}
+
+
 function ws_load() {
     websocket.onopen = function(evt) { ws_onOpen(evt) };
     websocket.onclose = function(evt) { ws_onClose(evt) };
@@ -201,36 +239,31 @@ function ws_send(command, value) {
         value
     }))
 }
-
-function get_trip() {
-    setTimeout(() => {ws_send(WS.GET_DRIVE_TRIP, true)}, 400);
-    setTimeout(() => {ws_send(WS.GET_DRIVE_SUBTRIP, true)}, 1400);
-    // setTimeout(() => {ws_send(WS.GET_DRIVE_TRIP_DATE, true)}, 2400);
-}
       
 function ws_onOpen(evt) {
-
-    get_trip();
-    setInterval(() => get_trip(), 10000);
-
-    setInterval(() => {
-        setTimeout(() => ws_send(WS.GET_DRIVE_DASHBOARD_UPDATE, true), 0);
-        setTimeout(() => ws_send(WS.PLC_RUN, true), 200);
-    }, 1000);
+    ws_send("GET_STATE", true);
 }
       
 function ws_onClose(evt) {
     console.log(`WS: ${evt.type}`);
     console.log(evt.data);
+    location.reload();
 }
       
 function ws_onMessage(evt) {
-    console.log(`WS: ${evt.type}`);
+    // console.log(`WS: ${evt.type}`);
     let parsedEvt = JSON.parse(evt.data);
-    console.log(parsedEvt);
+    // console.log(parsedEvt);
     switch(parsedEvt.command){
+        case "GET_STATE":
+            driveTripDescription = parsedEvt.payload.drive_tripCode;
+            for (const key in parsedEvt.payload.state) {
+                // console.log("sending to pubsub: ", MAP_STATE_WS[key], parsedEvt.payload.state[key]);
+                pubsub.publish(MAP_STATE_WS[key], parsedEvt.payload.state[key]);
+            }
+            break;
         default:
-            pubsub.publish(parsedEvt.command, parsedEvt.value);
+            pubsub.publish(parsedEvt.command, parsedEvt.payload);
             break;
     }
 }
@@ -241,15 +274,63 @@ function ws_onError(evt) {
 }
 
 const WS = {
-    GET_DRIVE_TRIP: 'Get_Drive_Trip',
-    GET_DRIVE_SUBTRIP: 'Get_Drive_Subtrip',
-    GET_DRIVE_TRIP_DATE: 'Get_Drive_Trip_Date',
+    DRIVE_SET_LENGTH                    : "DRIVE_SET_LENGTH",
+    DRIVE_SET_SPEED                     : "DRIVE_SET_SPEED",
+    DRIVE_SET_COUNTER_PV                : "DRIVE_SET_COUNTER_PV",
+    DRIVE_SET_COUNTER_CV                : "DRIVE_SET_COUNTER_CV",
+    DRIVE_SET_COUNTER_RESET             : "DRIVE_SET_COUNTER_RESET",
+    DRIVE_SET_THREAD_FORWARD            : "DRIVE_SET_THREAD_FORWARD",
+    DRIVE_SET_THREAD_REVERSE            : "DRIVE_SET_THREAD_REVERSE",
+    DRIVE_SET_DISTANCE_MOTOR_TURN       : "DRIVE_SET_DISTANCE_MOTOR_TURN",
+    DRIVE_SET_DISTANCE_ENCODER_TURN     : "DRIVE_SET_DISTANCE_ENCODER_TURN",
+    DRIVE_SET_ACCELERATION_POSITION     : "DRIVE_SET_ACCELERATION_POSITION",
+    DRIVE_SET_DECCELERATION_POSITION    : "DRIVE_SET_DECCELERATION_POSITION",
+    DRIVE_SET_JOG_ACCELERATION          : "DRIVE_SET_JOG_ACCELERATION",
+    DRIVE_SET_JOG_DECCELERATION         : "DRIVE_SET_JOG_DECCELERATION",
+    DRIVE_SET_JOG_SPEED                 : "DRIVE_SET_JOG_SPEED",
 
-    PLC_STATUS: 'PLC_Status',
-    PLC_RUN: 'PLC_Run',
-    DRIVE_STATUS: 'DRIVE_Status',
-    DRIVE_TRIP: 'DRIVE_Trip',
+    DRIVE_GET_INDICATOR     : "DRIVE_GET_INDICATOR",
+    DRIVE_GET_TRIP_FLAG     : "DRIVE_GET_TRIP_FLAG",
+    DRIVE_GET_TRIP          : "DRIVE_GET_TRIP",
+    DRIVE_GET_TRIP_DATE     : "DRIVE_GET_TRIP_DATE",
+    DRIVE_GET_SUBTRIP       : "DRIVE_GET_SUBTRIP",
+    DRIVE_GET_MODBUS_STATS  : "DRIVE_GET_MODBUS_STATS",
 
-    GET_DRIVE_DASHBOARD_UPDATE: 'Drive_Dashboard_Update',
-    GET_PLC_DASHBOARD: 'PLC_Dashboard',
+    PLC_SET_ENABLE_UNCOILER : "PLC_SET_ENABLE_UNCOILER",
+    PLC_SET_ENABLE_LEVELER  : "PLC_SET_ENABLE_LEVELER",
+    PLC_SET_ENABLE_RECOILER : "PLC_SET_ENABLE_RECOILER",
+    PLC_SET_ENABLE_FEEDER   : "PLC_SET_ENABLE_FEEDER",
+
+    PLC_GET_TRIP_FLAG       : "PLC_GET_TRIP_FLAG",
+    PLC_GET_STATE_X         : "PLC_GET_STATE_X",
+    PLC_GET_STATE_Y         : "PLC_GET_STATE_Y",
+    PLC_GET_MODBUS_STATS    : "PLC_GET_MODBUS_STATS",
+
+    MODBUS_ERROR_LIST       : "MODBUS_ERROR_LIST",
+}
+
+const MAP_STATE_WS = {
+    drive_feedLength            : WS.DRIVE_SET_LENGTH,
+    drive_feedSpeed             : WS.DRIVE_SET_SPEED,
+    drive_feedAcceleration      : WS.DRIVE_SET_ACCELERATION_POSITION,
+    drive_feedDecceleration     : WS.DRIVE_SET_DECCELERATION_POSITION,
+    drive_punchCountPreset      : WS.DRIVE_SET_COUNTER_PV,
+    drive_punchCountDisplay     : WS.DRIVE_SET_COUNTER_CV,
+    drive_distanceTurnMotor     : WS.DRIVE_SET_DISTANCE_MOTOR_TURN,
+    drive_distanceTurnEncoder   : WS.DRIVE_SET_DISTANCE_ENCODER_TURN,
+    drive_jogAcceleration       : WS.DRIVE_SET_JOG_ACCELERATION,
+    drive_jogDecceleration      : WS.DRIVE_SET_JOG_DECCELERATION,
+    drive_jogSpeed              : WS.DRIVE_SET_JOG_SPEED,
+    drive_tripStatus            : WS.DRIVE_GET_TRIP_FLAG,
+    drive_tripList              : WS.DRIVE_GET_TRIP,
+    drive_tripSub               : WS.DRIVE_GET_SUBTRIP,
+    drive_tripDate              : WS.DRIVE_GET_TRIP_DATE,
+    drive_modbusStatus          : WS.DRIVE_GET_MODBUS_STATS,
+
+    plc_state_x                 : WS.PLC_GET_STATE_X,
+    plc_state_y                 : WS.PLC_GET_STATE_Y,
+    plc_tripStatus              : WS.PLC_GET_TRIP_FLAG,
+    plc_modbusStatus            : WS.PLC_GET_MODBUS_STATS,
+
+    modbus_errorList            : WS.MODBUS_ERROR_LIST,
 }
