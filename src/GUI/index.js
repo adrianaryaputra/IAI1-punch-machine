@@ -419,6 +419,8 @@ function generateGUI() {
         buttonRecoiler.enable(true);
         buttonFeeder.active(y[3]?1:0);
         buttonFeeder.enable(true);
+        buttonFeederPressure.active(y[6]?1:0);
+        buttonFeederPressure.enable(true);
     })
 }
 

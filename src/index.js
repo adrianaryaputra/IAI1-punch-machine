@@ -71,6 +71,7 @@ const WSCMD = {
     PLC_SET_ENABLE_LEVELER  : "PLC_SET_ENABLE_LEVELER",
     PLC_SET_ENABLE_RECOILER : "PLC_SET_ENABLE_RECOILER",
     PLC_SET_ENABLE_FEEDER   : "PLC_SET_ENABLE_FEEDER",
+    PLC_SET_ENABLE_FEEDCLAMP: "PLC_SET_ENABLE_FEEDCLAMP",
 
     PLC_GET_TRIP_FLAG       : "PLC_GET_TRIP_FLAG",
     PLC_GET_STATE_X         : "PLC_GET_STATE_X",
@@ -137,6 +138,7 @@ const ADDRESS = {
     PLC_SET_ENABLE_LEVELER  : {type:plc.type.M, address:17},
     PLC_SET_ENABLE_RECOILER : {type:plc.type.M, address:18},
     PLC_SET_ENABLE_FEEDER   : {type:plc.type.M, address:19},
+    PLC_SET_ENABLE_FEEDCLAMP: {type:plc.type.M, address:33},
 
     PLC_GET_STATE_X         : {type:plc.type.M, address:0, length:1},
     PLC_GET_STATE_Y         : {type:plc.type.M, address:20, length:2},
@@ -232,6 +234,7 @@ function ws_handleIncoming(client, command, value) {
             case WSCMD.PLC_SET_ENABLE_LEVELER  :
             case WSCMD.PLC_SET_ENABLE_RECOILER :
             case WSCMD.PLC_SET_ENABLE_FEEDER   :
+            case WSCMD.PLC_SET_ENABLE_FEEDCLAMP:
                 plc.pulse({
                     ...ADDRESS[command],
                     callback: (error, success) => {
