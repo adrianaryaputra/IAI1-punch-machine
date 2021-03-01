@@ -159,7 +159,7 @@ module.exports = class PLC_FX3U extends ModbusSlave{
         type,
         address,
         priority = 1,
-        duration = 100,
+        duration = 0,
         callback = ()=>{}
     }) {
         switch(type) {
@@ -172,10 +172,12 @@ module.exports = class PLC_FX3U extends ModbusSlave{
                     type, address, value: true, priority,
                     callback: (error, success) => {
                         if(success) {
-                            this.write({
-                                type, address, value: false, priority,
-                                callback
-                            });
+                            setTimeout(() => {
+                                this.write({
+                                    type, address, value: false, priority,
+                                    callback
+                                });
+                            }, duration)
                         }
                         if(error)
                             callback(error, success);

@@ -243,13 +243,17 @@ class ModbusHandler {
                 if(success) {
                     _chunkBuffer.push(success);
                     // flatten the chunkBuffer
+                    // console.log(success);
                     success = _chunkBuffer.reduce((reducer, value) => { 
                         if(value.data) return reducer.concat(value.data.slice(0, 4));
+                        if(value.value !== undefined) return reducer.concat(value.value);
                         if(value.state !== undefined) return reducer.push(value.state);
                     }, []);
                 }
-                if(success || (error && modbusRetryCount == 0))
+                if((success !== null && success !== undefined) || (error && modbusRetryCount == 0)) {
+                    if(Array.isArray(success)) if(success.length==1) success = success[0];
                     modbusCallback(error, success);
+                }
             }
         });
     }

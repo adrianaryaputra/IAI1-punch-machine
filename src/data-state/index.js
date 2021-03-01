@@ -17,7 +17,7 @@ module.exports = class DataState {
                 }
             }
         } else {
-            console.error("state must be an object. we have: ", newState);
+            console.error("state must be an object. we have: ", typeof newStates, newStates);
         }
     }
 

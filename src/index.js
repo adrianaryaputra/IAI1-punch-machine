@@ -60,25 +60,62 @@ const WSCMD = {
     DRIVE_SET_JOG_DECCELERATION         : "DRIVE_SET_JOG_DECCELERATION",
     DRIVE_SET_JOG_SPEED                 : "DRIVE_SET_JOG_SPEED",
 
-    DRIVE_GET_INDICATOR     : "DRIVE_GET_INDICATOR",
-    DRIVE_GET_TRIP_FLAG     : "DRIVE_GET_TRIP_FLAG",
-    DRIVE_GET_TRIP          : "DRIVE_GET_TRIP",
-    DRIVE_GET_TRIP_DATE     : "DRIVE_GET_TRIP_DATE",
-    DRIVE_GET_SUBTRIP       : "DRIVE_GET_SUBTRIP",
-    DRIVE_GET_MODBUS_STATS  : "DRIVE_GET_MODBUS_STATS",
+    DRIVE_GET_INDICATOR                 : "DRIVE_GET_INDICATOR",
+    DRIVE_GET_TRIP_FLAG                 : "DRIVE_GET_TRIP_FLAG",
+    DRIVE_GET_TRIP                      : "DRIVE_GET_TRIP",
+    DRIVE_GET_TRIP_DATE                 : "DRIVE_GET_TRIP_DATE",
+    DRIVE_GET_SUBTRIP                   : "DRIVE_GET_SUBTRIP",
+    DRIVE_GET_MODBUS_STATS              : "DRIVE_GET_MODBUS_STATS",
 
-    PLC_SET_ENABLE_UNCOILER : "PLC_SET_ENABLE_UNCOILER",
-    PLC_SET_ENABLE_LEVELER  : "PLC_SET_ENABLE_LEVELER",
-    PLC_SET_ENABLE_RECOILER : "PLC_SET_ENABLE_RECOILER",
-    PLC_SET_ENABLE_FEEDER   : "PLC_SET_ENABLE_FEEDER",
-    PLC_SET_ENABLE_FEEDCLAMP: "PLC_SET_ENABLE_FEEDCLAMP",
+    PLC_SET_ENABLE_UNCOILER             : "PLC_SET_ENABLE_UNCOILER",
+    PLC_SET_ENABLE_LEVELER              : "PLC_SET_ENABLE_LEVELER",
+    PLC_SET_ENABLE_RECOILER             : "PLC_SET_ENABLE_RECOILER",
+    PLC_SET_ENABLE_FEEDER               : "PLC_SET_ENABLE_FEEDER",
+    PLC_SET_ENABLE_FEEDCLAMP            : "PLC_SET_ENABLE_FEEDCLAMP",
+    PLC_SET_ENABLE_PUNCH1X              : "PLC_SET_ENABLE_PUNCH1X",
 
-    PLC_GET_TRIP_FLAG       : "PLC_GET_TRIP_FLAG",
-    PLC_GET_STATE_X         : "PLC_GET_STATE_X",
-    PLC_GET_STATE_Y         : "PLC_GET_STATE_Y",
-    PLC_GET_MODBUS_STATS    : "PLC_GET_MODBUS_STATS",
+    PLC_GET_TRIP_FLAG                   : "PLC_GET_TRIP_FLAG",
+    PLC_GET_STATE_X                     : "PLC_GET_STATE_X",
+    PLC_GET_STATE_Y                     : "PLC_GET_STATE_Y",
+    PLC_GET_MODBUS_STATS                : "PLC_GET_MODBUS_STATS",
 
-    MODBUS_ERROR_LIST       : "MODBUS_ERROR_LIST",
+    MODBUS_ERROR_LIST                   : "MODBUS_ERROR_LIST",
+}
+
+
+
+// WS map to statelist
+const MAP_WS_STATE = {
+    DRIVE_SET_LENGTH                 : (val) => ({drive_feedLength: val}),          
+    DRIVE_SET_SPEED                  : (val) => ({drive_feedSpeed: val}),           
+    DRIVE_SET_ACCELERATION_POSITION  : (val) => ({drive_feedAcceleration: val}),    
+    DRIVE_SET_DECCELERATION_POSITION : (val) => ({drive_feedDecceleration: val}),   
+    DRIVE_SET_COUNTER_PV             : (val) => ({drive_punchCountPreset: val}),    
+    DRIVE_SET_COUNTER_CV             : (val) => ({drive_punchCountDisplay: val}),   
+    DRIVE_SET_DISTANCE_MOTOR_TURN    : (val) => ({drive_distanceTurnMotor: val}),   
+    DRIVE_SET_DISTANCE_ENCODER_TURN  : (val) => ({drive_distanceTurnEncoder: val}), 
+    DRIVE_SET_JOG_ACCELERATION       : (val) => ({drive_jogAcceleration: val}),     
+    DRIVE_SET_JOG_DECCELERATION      : (val) => ({drive_jogDecceleration: val}),    
+    DRIVE_SET_JOG_SPEED              : (val) => ({drive_jogSpeed: val}),            
+    DRIVE_GET_TRIP_FLAG              : (val) => ({drive_tripStatus: val}),          
+    DRIVE_GET_TRIP                   : (val) => ({drive_tripList: val}),            
+    DRIVE_GET_SUBTRIP                : (val) => ({drive_tripSub: val}),             
+    DRIVE_GET_TRIP_DATE              : (val) => ({drive_tripDate: val}),            
+    DRIVE_GET_MODBUS_STATS           : (val) => ({drive_modbusStatus: val}),
+    
+    PLC_SET_ENABLE_UNCOILER          : (y) => {y[0]=!y[0]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_LEVELER           : (y) => {y[1]=!y[1]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_RECOILER          : (y) => {y[2]=!y[2]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_FEEDER            : (y) => {y[3]=!y[3]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_FEEDCLAMP         : (y) => {y[6]=!y[6]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_PUNCH1X           : (y) => {y[4]=!y[4]; return({plc_state_y: y})},
+
+    PLC_GET_STATE_X                  : (val) => ({plc_state_x: val}),
+    PLC_GET_STATE_Y                  : (val) => ({plc_state_y: val}),
+    PLC_GET_TRIP_FLAG                : (val) => ({plc_tripStatus: val}),
+    PLC_GET_MODBUS_STATS             : (val) => ({plc_modbusStatus: val}),
+
+    MODBUS_ERROR_LIST                : (val) => ({modbus_errorList: val}),
 }
 
 
@@ -93,6 +130,8 @@ let deviceState = new DataState({
     drive_punchCountDisplay     : adapter_stateChange_ws(WSCMD.DRIVE_SET_COUNTER_CV),
     drive_distanceTurnMotor     : adapter_stateChange_ws(WSCMD.DRIVE_SET_DISTANCE_MOTOR_TURN),
     drive_distanceTurnEncoder   : adapter_stateChange_ws(WSCMD.DRIVE_SET_DISTANCE_ENCODER_TURN),
+    drive_threadForwardFlag     : adapter_stateChange_ws(WSCMD.DRIVE_SET_THREAD_FORWARD),
+    drive_threadReverseFlag     : adapter_stateChange_ws(WSCMD.DRIVE_SET_THREAD_REVERSE),
     drive_jogAcceleration       : adapter_stateChange_ws(WSCMD.DRIVE_SET_JOG_ACCELERATION),
     drive_jogDecceleration      : adapter_stateChange_ws(WSCMD.DRIVE_SET_JOG_DECCELERATION),
     drive_jogSpeed              : adapter_stateChange_ws(WSCMD.DRIVE_SET_JOG_SPEED),
@@ -129,19 +168,20 @@ const ADDRESS = {
     DRIVE_SET_JOG_DECCELERATION         : {menu:19, parameter:52},
     DRIVE_SET_JOG_SPEED                 : {menu:19, parameter:53},
 
-    DRIVE_GET_INDICATOR     : {menu:18, parameter:1, length:13},
-    DRIVE_GET_TRIP          : {menu:10, parameter:20, length:10},
-    DRIVE_GET_TRIP_DATE     : {menu:10, parameter:41, length:20},
-    DRIVE_GET_SUBTRIP       : {menu:10, parameter:70, length:10},
+    DRIVE_GET_INDICATOR                 : {menu:18, parameter:1, length:13},
+    DRIVE_GET_TRIP                      : {menu:10, parameter:20, length:10},
+    DRIVE_GET_TRIP_DATE                 : {menu:10, parameter:41, length:20},
+    DRIVE_GET_SUBTRIP                   : {menu:10, parameter:70, length:10},
 
-    PLC_SET_ENABLE_UNCOILER : {type:plc.type.M, address:16},
-    PLC_SET_ENABLE_LEVELER  : {type:plc.type.M, address:17},
-    PLC_SET_ENABLE_RECOILER : {type:plc.type.M, address:18},
-    PLC_SET_ENABLE_FEEDER   : {type:plc.type.M, address:19},
-    PLC_SET_ENABLE_FEEDCLAMP: {type:plc.type.M, address:33},
+    PLC_SET_ENABLE_UNCOILER             : {type:plc.type.M, address:16},
+    PLC_SET_ENABLE_LEVELER              : {type:plc.type.M, address:17},
+    PLC_SET_ENABLE_RECOILER             : {type:plc.type.M, address:18},
+    PLC_SET_ENABLE_FEEDER               : {type:plc.type.M, address:19},
+    PLC_SET_ENABLE_FEEDCLAMP            : {type:plc.type.M, address:33},
+    PLC_SET_ENABLE_PUNCH1X              : {type:plc.type.M, address:34},
 
-    PLC_GET_STATE_X         : {type:plc.type.M, address:0, length:1},
-    PLC_GET_STATE_Y         : {type:plc.type.M, address:20, length:2},
+    PLC_GET_STATE_X                     : {type:plc.type.M, address:0, length:1},
+    PLC_GET_STATE_Y                     : {type:plc.type.M, address:20, length:2},
 }
 
 
@@ -212,33 +252,74 @@ function ws_handleIncoming(client, command, value) {
                 drive.writeParameter({
                     ...ADDRESS[command],
                     value,
-                    callback: (error, success) => {
-                        // handle callback
-                    }
+                    callback: (e,s) => deviceState.update({...MAP_WS_STATE[command](s)}),
                 });
                 break;
             
-            case WSCMD.DRIVE_SET_THREAD_FORWARD:
-            case WSCMD.DRIVE_SET_THREAD_REVERSE:
-                drive.toggleParameter({
-                    ...ADDRESS[command],
-                    toggleOn: 1,
-                    toggleOff: 0,
-                    callback: (error, success) => {
-                        // handle callback
-                    }
+            case WSCMD.DRIVE_SET_THREAD_FORWARD :
+                drive.writeParameter({
+                    ...ADDRESS.DRIVE_SET_THREAD_REVERSE,
+                    value: 0,
+                    callback: (e,s) => {
+                        if(s !== null) {
+                            deviceState.update({
+                                drive_threadReverseFlag: s
+                            });
+                            drive.toggleParameter({
+                                ...ADDRESS[command],
+                                toggleOn: 1,
+                                toggleOff: 0,
+                                callback: (er, sc) => {
+                                    if(sc !== null) deviceState.update({
+                                        drive_threadForwardFlag: sc
+                                    });
+                                }
+                            });
+                        }
+                    },
+                });
+                break;
+                
+            case WSCMD.DRIVE_SET_THREAD_REVERSE :
+                drive.writeParameter({
+                    ...ADDRESS.DRIVE_SET_THREAD_FORWARD,
+                    value: 0,
+                    callback: (e,s) => {
+                        if(s !== null) {
+                            deviceState.update({
+                                drive_threadForwardFlag: s
+                            })
+                            drive.toggleParameter({
+                                ...ADDRESS[command],
+                                toggleOn: 1,
+                                toggleOff: 0,
+                                callback: (er, sc) => {
+                                    if(sc !== null) deviceState.update({
+                                        drive_threadReverseFlag: sc
+                                    })
+                                }
+                            });
+                        }
+                    },
                 });
                 break;
             
-            case WSCMD.PLC_SET_ENABLE_UNCOILER :
-            case WSCMD.PLC_SET_ENABLE_LEVELER  :
-            case WSCMD.PLC_SET_ENABLE_RECOILER :
-            case WSCMD.PLC_SET_ENABLE_FEEDER   :
-            case WSCMD.PLC_SET_ENABLE_FEEDCLAMP:
+            case WSCMD.PLC_SET_ENABLE_UNCOILER  :
+            case WSCMD.PLC_SET_ENABLE_LEVELER   :
+            case WSCMD.PLC_SET_ENABLE_RECOILER  :
+            case WSCMD.PLC_SET_ENABLE_FEEDER    :
+            case WSCMD.PLC_SET_ENABLE_FEEDCLAMP :
+            case WSCMD.PLC_SET_ENABLE_PUNCH1X   :
                 plc.pulse({
                     ...ADDRESS[command],
-                    callback: (error, success) => {
-                        // handle callback
+                    callback: (e,s) => {
+                        if(s!==null) {
+                            console.log("OLD", deviceState.state.plc_state_y);
+                            console.log("NEW", MAP_WS_STATE[command](deviceState.state.plc_state_y));
+                            deviceState.update({
+                                ...MAP_WS_STATE[command](deviceState.state.plc_state_y)
+                            });
+                        }
                     }
                 });
                 break;
@@ -365,7 +446,7 @@ function server_handleError(err) {
 // state-change callback to ws broadcast adapter
 function adapter_stateChange_ws(cmd) {
     return (val) => {
-        console.log("STATE CHANGE: ", cmd, val)
+        console.log("STATE CHANGE: ", cmd)
         ws_broadcast(cmd, val)
     }
 }

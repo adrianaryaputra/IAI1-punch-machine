@@ -18,10 +18,18 @@ function generateGUI() {
         }
     });
 
+    let buttonStyle = {
+        fontSize: "2rem",
+        textAlign: "center",
+        padding: "1rem",
+        width: "100%",
+    }
+
     let lenSubmit = new ClickableButton({
         text: "Submit",
         color: "#0f0",
         isEnable: false,
+        style: buttonStyle,
         callback: () => {
             console.log(formLen.get("length"), formLen.parse("length"));
             if(formLen.parse("length")){
@@ -35,6 +43,7 @@ function generateGUI() {
         text: "Submit",
         color: "#0f0",
         isEnable: false,
+        style: buttonStyle,
         callback: () => {
             console.log(formLen.get("feedLength"), formLen.parse("feedLength"));
             if(formLen.parse("feedLength")){
@@ -48,6 +57,7 @@ function generateGUI() {
         text: "Submit",
         color: "#0f0",
         isEnable: false,
+        style: buttonStyle,
         callback: () => {
             console.log(formLen.get("speed"), formLen.parse("speed"));
             if(formLen.parse("speed")){
@@ -60,6 +70,7 @@ function generateGUI() {
     let countReset = new ClickableButton({
         text: "Reset Count",
         color: "#f00",
+        style: buttonStyle,
         callback: () => {
             ws_send(WS.DRIVE_SET_COUNTER_RESET, true);
         }
@@ -68,6 +79,7 @@ function generateGUI() {
     let countPreset = new ClickableButton({
         text: "Preset Count",
         color: "#0f0",
+        style: buttonStyle,
         callback: () => {
             ws_send(WS.DRIVE_SET_COUNTER_PV, formLen.get("pcount"));
         }
@@ -196,13 +208,6 @@ function generateGUI() {
     textControl.style.textAlign = "center";
     holderControl.element().appendChild(textControl);
 
-    let buttonStyle = {
-        fontSize: "2rem",
-        textAlign: "center",
-        padding: "1rem",
-        width: "100%",
-    }
-
     let holderContactor = new Holder({
         parent: holderControl.element(),
         style: {
@@ -237,17 +242,6 @@ function generateGUI() {
         }
     });
 
-    let buttonRecoiler = new ClickableButton({
-        parent: holderContactor.element(),
-        text: "Recoiler",
-        color: "#F00",
-        style: buttonStyle,
-        callback: () => {
-            buttonRecoiler.enable(false);
-            ws_send(WS.PLC_SET_ENABLE_RECOILER, true)
-        }
-    });
-
     let buttonFeeder = new ClickableButton({
         parent: holderContactor.element(),
         text: "Feeder",
@@ -256,6 +250,17 @@ function generateGUI() {
         callback: () => {
             buttonFeeder.enable(false);
             ws_send(WS.PLC_SET_ENABLE_FEEDER, true)
+        }
+    });
+
+    let buttonRecoiler = new ClickableButton({
+        parent: holderContactor.element(),
+        text: "Recoiler",
+        color: "#F00",
+        style: buttonStyle,
+        callback: () => {
+            buttonRecoiler.enable(false);
+            ws_send(WS.PLC_SET_ENABLE_RECOILER, true)
         }
     });
     
@@ -280,25 +285,37 @@ function generateGUI() {
         }
     });
 
-    let buttonFeederPressure = new ClickableButton({
-        parent: holderThread.element(),
-        text: "Feeder Pressure Roll",
-        color: "#F00",
-        style: {
-            ...buttonStyle,
-            gridColumn: "2 / span 2"
-        },
-        callback: () => {
-            // ws_send(WS.DRIVE_SET_THREAD_FORWARD, true)
-        }
-    });
-
     let buttonThreadFwd = new ClickableButton({
         parent: holderThread.element(),
         text: "Thread Forward",
         style: buttonStyle,
         callback: () => {
             ws_send(WS.DRIVE_SET_THREAD_FORWARD, true)
+        }
+    });
+
+    let buttonFeederPressure = new ClickableButton({
+        parent: holderThread.element(),
+        text: "Feed Roll Clamp",
+        color: "#F00",
+        style: {
+            ...buttonStyle,
+            // gridColumn: "2 / span 2"
+        },
+        callback: () => {
+            buttonFeederPressure.enable(false);
+            ws_send(WS.PLC_SET_ENABLE_FEEDCLAMP, true);
+        }
+    });
+
+    let buttonPunch1x = new ClickableButton({
+        parent: holderThread.element(),
+        text: "Punch 1x",
+        style: {
+            ...buttonStyle,
+        },
+        callback: () => {
+            ws_send(WS.PLC_SET_ENABLE_PUNCH1X, true);
         }
     });
 
@@ -452,7 +469,7 @@ function ws_onClose(evt) {
 function ws_onMessage(evt) {
     // console.log(`WS: ${evt.type}`);
     let parsedEvt = JSON.parse(evt.data);
-    // console.log(parsedEvt);
+    console.log(parsedEvt);
     switch(parsedEvt.command){
         case "GET_STATE":
             for (const key in parsedEvt.payload.state) {
@@ -493,24 +510,26 @@ const WS = {
     DRIVE_SET_JOG_DECCELERATION         : "DRIVE_SET_JOG_DECCELERATION",
     DRIVE_SET_JOG_SPEED                 : "DRIVE_SET_JOG_SPEED",
 
-    DRIVE_GET_INDICATOR     : "DRIVE_GET_INDICATOR",
-    DRIVE_GET_TRIP_FLAG     : "DRIVE_GET_TRIP_FLAG",
-    DRIVE_GET_TRIP          : "DRIVE_GET_TRIP",
-    DRIVE_GET_TRIP_DATE     : "DRIVE_GET_TRIP_DATE",
-    DRIVE_GET_SUBTRIP       : "DRIVE_GET_SUBTRIP",
-    DRIVE_GET_MODBUS_STATS  : "DRIVE_GET_MODBUS_STATS",
+    DRIVE_GET_INDICATOR                 : "DRIVE_GET_INDICATOR",
+    DRIVE_GET_TRIP_FLAG                 : "DRIVE_GET_TRIP_FLAG",
+    DRIVE_GET_TRIP                      : "DRIVE_GET_TRIP",
+    DRIVE_GET_TRIP_DATE                 : "DRIVE_GET_TRIP_DATE",
+    DRIVE_GET_SUBTRIP                   : "DRIVE_GET_SUBTRIP",
+    DRIVE_GET_MODBUS_STATS              : "DRIVE_GET_MODBUS_STATS",
 
-    PLC_SET_ENABLE_UNCOILER : "PLC_SET_ENABLE_UNCOILER",
-    PLC_SET_ENABLE_LEVELER  : "PLC_SET_ENABLE_LEVELER",
-    PLC_SET_ENABLE_RECOILER : "PLC_SET_ENABLE_RECOILER",
-    PLC_SET_ENABLE_FEEDER   : "PLC_SET_ENABLE_FEEDER",
+    PLC_SET_ENABLE_UNCOILER             : "PLC_SET_ENABLE_UNCOILER",
+    PLC_SET_ENABLE_LEVELER              : "PLC_SET_ENABLE_LEVELER",
+    PLC_SET_ENABLE_RECOILER             : "PLC_SET_ENABLE_RECOILER",
+    PLC_SET_ENABLE_FEEDER               : "PLC_SET_ENABLE_FEEDER",
+    PLC_SET_ENABLE_FEEDCLAMP            : "PLC_SET_ENABLE_FEEDCLAMP",
+    PLC_SET_ENABLE_PUNCH1X              : "PLC_SET_ENABLE_PUNCH1X",
 
-    PLC_GET_TRIP_FLAG       : "PLC_GET_TRIP_FLAG",
-    PLC_GET_STATE_X         : "PLC_GET_STATE_X",
-    PLC_GET_STATE_Y         : "PLC_GET_STATE_Y",
-    PLC_GET_MODBUS_STATS    : "PLC_GET_MODBUS_STATS",
+    PLC_GET_TRIP_FLAG                   : "PLC_GET_TRIP_FLAG",
+    PLC_GET_STATE_X                     : "PLC_GET_STATE_X",
+    PLC_GET_STATE_Y                     : "PLC_GET_STATE_Y",
+    PLC_GET_MODBUS_STATS                : "PLC_GET_MODBUS_STATS",
 
-    MODBUS_ERROR_LIST       : "MODBUS_ERROR_LIST",
+    MODBUS_ERROR_LIST                   : "MODBUS_ERROR_LIST",
 }
 
 const MAP_STATE_WS = {
