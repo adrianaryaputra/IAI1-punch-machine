@@ -2,13 +2,12 @@
 const cfg = require('./config');
 
 // serial communication import
-const { ModbusHandler } = require('./handler-modbus');
-const SerialHandler = require('./handler-serial');
+const { ModbusHandler, SerialPort } = require('com-modbus');
 const DataState = require('./data-state');
 
-// serial slave object import
-const Drive_M701 = require("./drive-ct-m701");
-const PLC_FX3U = require("./plc-mitsubishi-fx3u");
+// serial device import
+const { ModbusDevice_Nidec_M701 } = require('modbus-nidec-m701');
+const { ModbusDevice_FX3U } = require('modbus-mitsubishi-fx3u');
 
 // web import
 const WebSocket = require('ws');
@@ -29,13 +28,13 @@ let modbusHandler = new ModbusHandler({
     retryCount: cfg.STATUS_RETRY_COUNT,
 });
 
-let drive = new Drive_M701({
+let drive = new ModbusDevice_Nidec_M701({
     modbusHandler: modbusHandler,
     modbusId: 1,
     modbusTimeout: cfg.MODBUS_TIMEOUT,
 });
 
-let plc = new PLC_FX3U({
+let plc = new ModbusDevice_FX3U({
     modbusHandler: modbusHandler,
     modbusId: 2,
     modbusTimeout: cfg.MODBUS_TIMEOUT,
@@ -196,15 +195,20 @@ runUpdater();
 async function runModbus() {
     try {
         console.log("connecting to modbus ...");
-        let serialHandler = await new SerialHandler({ baudRate: cfg.MODBUS_BAUD, stopBits: cfg.MODBUS_STOPBIT}).init();
-        let modbusPort = serialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
-        modbusHandler.setConnection(modbusPort);
-        modbusHandler.open(() => {
-            if(typeof stateUpdaterInterval == 'object') {
-                for (const key in stateUpdaterInterval) clearInterval(stateUpdaterInterval);
-            }
-            console.log("modbus port open");
-        });
+        let serialList = (await SerialPort.list()).filter(s => s.manufacturer == cfg.MODBUS_SERIALNAME);
+        if(serialList.length == 1) {
+            let port = new SerialPort(serialList[0].path, {
+                baudRate: cfg.MODBUS_BAUD,
+                stopBits: cfg.MODBUS_STOPBIT
+            });
+            modbusHandler.setConnection(port).open(() => {
+                if(typeof stateUpdaterInterval == 'object') {
+                    for (const key in stateUpdaterInterval) clearInterval(stateUpdaterInterval);
+                }
+                console.log("modbus port open");
+            });
+        }
+        else throw Error(`there are ${this.serialList.length} serial exist. you need exactly 1 serial`);
     } catch(e) {
         server_handleError(e);
         setTimeout(() => runModbus(), 5000); 

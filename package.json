@@ -10,9 +10,12 @@
   "author": "ad",
   "license": "ISC",
   "dependencies": {
+    "com-modbus": "git://github.com/adrianaryaputra/com-modbus.git",
     "express": "^4.17.1",
+    "modbus-mitsubishi-fx3u": "git://github.com/adrianaryaputra/modbus-mitsubishi-fx3u.git",
+    "modbus-nidec-m701": "git://github.com/adrianaryaputra/modbus-nidec-m701.git",
     "modbus-serial": "^8.0.1",
-    "serialport": "^9.0.4",
-    "ws": "^7.4.2"
+    "serialport": "^9.0.7",
+    "ws": "^7.4.3"
   }
 }
