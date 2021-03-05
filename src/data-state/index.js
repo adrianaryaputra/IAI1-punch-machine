@@ -1,8 +1,17 @@
 module.exports = class DataState {
 
     constructor(stateHandle) {
-        this.stateHandle = stateHandle;
+        if(typeof stateHandle == "object") this.stateHandle = stateHandle;
+        else this.stateHandle = {};
         this.state = new Object();
+    }
+
+    observe(newHandle) {
+        this.stateHandle = Object.assign(
+            this.stateHandle,
+            newHandle,
+        );
+        return this;
     }
 
     update(newStates) {
@@ -19,6 +28,11 @@ module.exports = class DataState {
         } else {
             console.error("state must be an object. we have: ", typeof newStates, newStates);
         }
+        return this;
+    }
+
+    get() {
+        return this.state
     }
 
     _updateStateArray(newStateKey, newStateValue) {
@@ -26,7 +40,7 @@ module.exports = class DataState {
         if (newStateValue === undefined) return
         if (newStateValue === null) return
 
-        if(Array.isArray(newStateValue)) {
+        if(typeof newStateValue == 'object') {
             
             // serialize array / object
             let serOld = JSON.stringify(this.state[newStateKey]);
@@ -40,26 +54,6 @@ module.exports = class DataState {
                     this.state[newStateKey]
                 )
             }
-
-            // let similar = true;
-            // if(this.state[newStateValue] == undefined) similar = false;
-            // else if(newStateValue.length == this.state[newStateValue].length) {
-            //     similar = (
-            //         newStateValue.filter((val, idx) => {
-            //             return JSON.stringify(val) == JSON.stringify(this.state[newStateKey][idx])
-            //         }).length == 0
-            //     )
-            // } 
-            // else similar = false;
-            // if(!similar) {
-            //     // change it
-            //     this.state[newStateKey] = newStateValue;
-            //     // call the handle
-            //     this.stateHandle[newStateKey](
-            //         this.state[newStateKey]
-            //     )
-            // }
-            // return
         }
 
     }
