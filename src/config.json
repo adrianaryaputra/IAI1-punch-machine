@@ -1,0 +1,55 @@
+{
+    "GUI_PORT": 8080,
+    "WS_PORT": 8081,
+    
+    "MODBUS_BAUD": 19200,
+    "MODBUS_STOPBIT": 2,
+    "MODBUS_SERIALNAME": "FTDI",
+    "MODBUS_TIMEOUT": 500,
+    "MODBUS_SEND_INTERVAL": 50,
+
+    "STATUS_RETRY_COUNT": 10,
+
+    "DRIVE_ID": 1,
+    "PLC_ID": 2,
+    "STATE_UPDATE_INTERVAL_PRIMARY": 3000,
+    "STATE_UPDATE_INTERVAL_SECONDARY": 10000,
+
+    "WEBSOCKET_COMMAND": {
+        "DRIVE_SET_LENGTH"                    : "DRIVE_SET_LENGTH",
+        "DRIVE_SET_SPEED"                     : "DRIVE_SET_SPEED",
+        "DRIVE_SET_COUNTER_PV"                : "DRIVE_SET_COUNTER_PV",
+        "DRIVE_SET_COUNTER_CV"                : "DRIVE_SET_COUNTER_CV",
+        "DRIVE_SET_COUNTER_RESET"             : "DRIVE_SET_COUNTER_RESET",
+        "DRIVE_SET_THREAD_FORWARD"            : "DRIVE_SET_THREAD_FORWARD",
+        "DRIVE_SET_THREAD_REVERSE"            : "DRIVE_SET_THREAD_REVERSE",
+        "DRIVE_SET_DISTANCE_MOTOR_TURN"       : "DRIVE_SET_DISTANCE_MOTOR_TURN",
+        "DRIVE_SET_DISTANCE_ENCODER_TURN"     : "DRIVE_SET_DISTANCE_ENCODER_TURN",
+        "DRIVE_SET_ACCELERATION_POSITION"     : "DRIVE_SET_ACCELERATION_POSITION",
+        "DRIVE_SET_DECCELERATION_POSITION"    : "DRIVE_SET_DECCELERATION_POSITION",
+        "DRIVE_SET_JOG_ACCELERATION"          : "DRIVE_SET_JOG_ACCELERATION",
+        "DRIVE_SET_JOG_DECCELERATION"         : "DRIVE_SET_JOG_DECCELERATION",
+        "DRIVE_SET_JOG_SPEED"                 : "DRIVE_SET_JOG_SPEED",
+    
+        "DRIVE_GET_INDICATOR"                 : "DRIVE_GET_INDICATOR",
+        "DRIVE_GET_TRIP_FLAG"                 : "DRIVE_GET_TRIP_FLAG",
+        "DRIVE_GET_TRIP"                      : "DRIVE_GET_TRIP",
+        "DRIVE_GET_TRIP_DATE"                 : "DRIVE_GET_TRIP_DATE",
+        "DRIVE_GET_SUBTRIP"                   : "DRIVE_GET_SUBTRIP",
+        "DRIVE_GET_MODBUS_STATS"              : "DRIVE_GET_MODBUS_STATS",
+    
+        "PLC_SET_ENABLE_UNCOILER"             : "PLC_SET_ENABLE_UNCOILER",
+        "PLC_SET_ENABLE_LEVELER"              : "PLC_SET_ENABLE_LEVELER",
+        "PLC_SET_ENABLE_RECOILER"             : "PLC_SET_ENABLE_RECOILER",
+        "PLC_SET_ENABLE_FEEDER"               : "PLC_SET_ENABLE_FEEDER",
+        "PLC_SET_ENABLE_FEEDCLAMP"            : "PLC_SET_ENABLE_FEEDCLAMP",
+        "PLC_SET_ENABLE_PUNCH1X"              : "PLC_SET_ENABLE_PUNCH1X",
+    
+        "PLC_GET_TRIP_FLAG"                   : "PLC_GET_TRIP_FLAG",
+        "PLC_GET_STATE_X"                     : "PLC_GET_STATE_X",
+        "PLC_GET_STATE_Y"                     : "PLC_GET_STATE_Y",
+        "PLC_GET_MODBUS_STATS"                : "PLC_GET_MODBUS_STATS",
+    
+        "MODBUS_ERROR_LIST"                   : "MODBUS_ERROR_LIST"
+    }
+}

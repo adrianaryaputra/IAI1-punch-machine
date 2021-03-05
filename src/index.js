@@ -1,13 +1,13 @@
 // configuration import
-const cfg = require('./config');
+const cfg = require('./config.json');
 
 // serial communication import
 const { ModbusHandler, SerialPort } = require('com-modbus');
-const DataState = require('./data-state');
+const { ModbusDevice_Nidec_M701 }   = require('modbus-nidec-m701');
+const { ModbusDevice_FX3U }         = require('modbus-mitsubishi-fx3u');
 
-// serial device import
-const { ModbusDevice_Nidec_M701 } = require('modbus-nidec-m701');
-const { ModbusDevice_FX3U } = require('modbus-mitsubishi-fx3u');
+// state observer
+const DataState = require('observable-state');
 
 // web import
 const WebSocket = require('ws');
@@ -18,6 +18,8 @@ app.use(express.static(`${__dirname}/GUI`))
 app.listen(cfg.GUI_PORT, () => {
     console.log(`listening on port ${cfg.GUI_PORT}`);
 });
+
+
 
 
 
@@ -42,173 +44,29 @@ let plc = new ModbusDevice_FX3U({
 
 
 
-// create WS command list
-const WSCMD = {
-    DRIVE_SET_LENGTH                    : "DRIVE_SET_LENGTH",
-    DRIVE_SET_SPEED                     : "DRIVE_SET_SPEED",
-    DRIVE_SET_COUNTER_PV                : "DRIVE_SET_COUNTER_PV",
-    DRIVE_SET_COUNTER_CV                : "DRIVE_SET_COUNTER_CV",
-    DRIVE_SET_COUNTER_RESET             : "DRIVE_SET_COUNTER_RESET",
-    DRIVE_SET_THREAD_FORWARD            : "DRIVE_SET_THREAD_FORWARD",
-    DRIVE_SET_THREAD_REVERSE            : "DRIVE_SET_THREAD_REVERSE",
-    DRIVE_SET_DISTANCE_MOTOR_TURN       : "DRIVE_SET_DISTANCE_MOTOR_TURN",
-    DRIVE_SET_DISTANCE_ENCODER_TURN     : "DRIVE_SET_DISTANCE_ENCODER_TURN",
-    DRIVE_SET_ACCELERATION_POSITION     : "DRIVE_SET_ACCELERATION_POSITION",
-    DRIVE_SET_DECCELERATION_POSITION    : "DRIVE_SET_DECCELERATION_POSITION",
-    DRIVE_SET_JOG_ACCELERATION          : "DRIVE_SET_JOG_ACCELERATION",
-    DRIVE_SET_JOG_DECCELERATION         : "DRIVE_SET_JOG_DECCELERATION",
-    DRIVE_SET_JOG_SPEED                 : "DRIVE_SET_JOG_SPEED",
-
-    DRIVE_GET_INDICATOR                 : "DRIVE_GET_INDICATOR",
-    DRIVE_GET_TRIP_FLAG                 : "DRIVE_GET_TRIP_FLAG",
-    DRIVE_GET_TRIP                      : "DRIVE_GET_TRIP",
-    DRIVE_GET_TRIP_DATE                 : "DRIVE_GET_TRIP_DATE",
-    DRIVE_GET_SUBTRIP                   : "DRIVE_GET_SUBTRIP",
-    DRIVE_GET_MODBUS_STATS              : "DRIVE_GET_MODBUS_STATS",
-
-    PLC_SET_ENABLE_UNCOILER             : "PLC_SET_ENABLE_UNCOILER",
-    PLC_SET_ENABLE_LEVELER              : "PLC_SET_ENABLE_LEVELER",
-    PLC_SET_ENABLE_RECOILER             : "PLC_SET_ENABLE_RECOILER",
-    PLC_SET_ENABLE_FEEDER               : "PLC_SET_ENABLE_FEEDER",
-    PLC_SET_ENABLE_FEEDCLAMP            : "PLC_SET_ENABLE_FEEDCLAMP",
-    PLC_SET_ENABLE_PUNCH1X              : "PLC_SET_ENABLE_PUNCH1X",
-
-    PLC_GET_TRIP_FLAG                   : "PLC_GET_TRIP_FLAG",
-    PLC_GET_STATE_X                     : "PLC_GET_STATE_X",
-    PLC_GET_STATE_Y                     : "PLC_GET_STATE_Y",
-    PLC_GET_MODBUS_STATS                : "PLC_GET_MODBUS_STATS",
-
-    MODBUS_ERROR_LIST                   : "MODBUS_ERROR_LIST",
-}
-
-
-
-// WS map to statelist
-const MAP_WS_STATE = {
-    DRIVE_SET_LENGTH                 : (val) => ({drive_feedLength: val}),          
-    DRIVE_SET_SPEED                  : (val) => ({drive_feedSpeed: val}),           
-    DRIVE_SET_ACCELERATION_POSITION  : (val) => ({drive_feedAcceleration: val}),    
-    DRIVE_SET_DECCELERATION_POSITION : (val) => ({drive_feedDecceleration: val}),   
-    DRIVE_SET_COUNTER_PV             : (val) => ({drive_punchCountPreset: val}),    
-    DRIVE_SET_COUNTER_CV             : (val) => ({drive_punchCountDisplay: val}),   
-    DRIVE_SET_DISTANCE_MOTOR_TURN    : (val) => ({drive_distanceTurnMotor: val}),   
-    DRIVE_SET_DISTANCE_ENCODER_TURN  : (val) => ({drive_distanceTurnEncoder: val}), 
-    DRIVE_SET_JOG_ACCELERATION       : (val) => ({drive_jogAcceleration: val}),     
-    DRIVE_SET_JOG_DECCELERATION      : (val) => ({drive_jogDecceleration: val}),    
-    DRIVE_SET_JOG_SPEED              : (val) => ({drive_jogSpeed: val}),            
-    DRIVE_GET_TRIP_FLAG              : (val) => ({drive_tripStatus: val}),          
-    DRIVE_GET_TRIP                   : (val) => ({drive_tripList: val}),            
-    DRIVE_GET_SUBTRIP                : (val) => ({drive_tripSub: val}),             
-    DRIVE_GET_TRIP_DATE              : (val) => ({drive_tripDate: val}),            
-    DRIVE_GET_MODBUS_STATS           : (val) => ({drive_modbusStatus: val}),
-    
-    PLC_SET_ENABLE_UNCOILER          : (y) => {y[0]=!y[0]; return({plc_state_y: y})},
-    PLC_SET_ENABLE_LEVELER           : (y) => {y[1]=!y[1]; return({plc_state_y: y})},
-    PLC_SET_ENABLE_RECOILER          : (y) => {y[2]=!y[2]; return({plc_state_y: y})},
-    PLC_SET_ENABLE_FEEDER            : (y) => {y[3]=!y[3]; return({plc_state_y: y})},
-    PLC_SET_ENABLE_FEEDCLAMP         : (y) => {y[6]=!y[6]; return({plc_state_y: y})},
-    PLC_SET_ENABLE_PUNCH1X           : (y) => {y[4]=!y[4]; return({plc_state_y: y})},
-
-    PLC_GET_STATE_X                  : (val) => ({plc_state_x: val}),
-    PLC_GET_STATE_Y                  : (val) => ({plc_state_y: val}),
-    PLC_GET_TRIP_FLAG                : (val) => ({plc_tripStatus: val}),
-    PLC_GET_MODBUS_STATS             : (val) => ({plc_modbusStatus: val}),
-
-    MODBUS_ERROR_LIST                : (val) => ({modbus_errorList: val}),
-}
-
-
-
-// create data state object
-let deviceState = new DataState({
-    drive_feedLength            : adapter_stateChange_ws(WSCMD.DRIVE_SET_LENGTH),
-    drive_feedSpeed             : adapter_stateChange_ws(WSCMD.DRIVE_SET_SPEED),
-    drive_feedAcceleration      : adapter_stateChange_ws(WSCMD.DRIVE_SET_ACCELERATION_POSITION),
-    drive_feedDecceleration     : adapter_stateChange_ws(WSCMD.DRIVE_SET_DECCELERATION_POSITION),
-    drive_punchCountPreset      : adapter_stateChange_ws(WSCMD.DRIVE_SET_COUNTER_PV),
-    drive_punchCountDisplay     : adapter_stateChange_ws(WSCMD.DRIVE_SET_COUNTER_CV),
-    drive_distanceTurnMotor     : adapter_stateChange_ws(WSCMD.DRIVE_SET_DISTANCE_MOTOR_TURN),
-    drive_distanceTurnEncoder   : adapter_stateChange_ws(WSCMD.DRIVE_SET_DISTANCE_ENCODER_TURN),
-    drive_threadForwardFlag     : adapter_stateChange_ws(WSCMD.DRIVE_SET_THREAD_FORWARD),
-    drive_threadReverseFlag     : adapter_stateChange_ws(WSCMD.DRIVE_SET_THREAD_REVERSE),
-    drive_jogAcceleration       : adapter_stateChange_ws(WSCMD.DRIVE_SET_JOG_ACCELERATION),
-    drive_jogDecceleration      : adapter_stateChange_ws(WSCMD.DRIVE_SET_JOG_DECCELERATION),
-    drive_jogSpeed              : adapter_stateChange_ws(WSCMD.DRIVE_SET_JOG_SPEED),
-    drive_tripStatus            : adapter_stateChange_ws(WSCMD.DRIVE_GET_TRIP_FLAG),
-    drive_tripList              : adapter_stateChange_ws(WSCMD.DRIVE_GET_TRIP),
-    drive_tripSub               : adapter_stateChange_ws(WSCMD.DRIVE_GET_SUBTRIP),
-    drive_tripDate              : adapter_stateChange_ws(WSCMD.DRIVE_GET_TRIP_DATE),
-    drive_modbusStatus          : adapter_stateChange_ws(WSCMD.DRIVE_GET_MODBUS_STATS),
-
-    plc_state_x                 : adapter_stateChange_ws(WSCMD.PLC_GET_STATE_X),
-    plc_state_y                 : adapter_stateChange_ws(WSCMD.PLC_GET_STATE_Y),
-    plc_tripStatus              : adapter_stateChange_ws(WSCMD.PLC_GET_TRIP_FLAG),
-    plc_modbusStatus            : adapter_stateChange_ws(WSCMD.PLC_GET_MODBUS_STATS),
-
-    modbus_errorList            : adapter_stateChange_ws(WSCMD.MODBUS_ERROR_LIST),
-});
-
-
-
-// create modbus address list
-const ADDRESS = {
-    DRIVE_SET_LENGTH                    : {menu:18, parameter:1},
-    DRIVE_SET_SPEED                     : {menu:18, parameter:12},
-    DRIVE_SET_COUNTER_PV                : {menu:18, parameter:13},
-    DRIVE_SET_COUNTER_CV                : {menu:18, parameter:4},
-    DRIVE_SET_COUNTER_RESET             : {menu:19, parameter:50},
-    DRIVE_SET_THREAD_FORWARD            : {menu:18, parameter:31},
-    DRIVE_SET_THREAD_REVERSE            : {menu:18, parameter:32},
-    DRIVE_SET_DISTANCE_MOTOR_TURN       : {menu:18, parameter:51},
-    DRIVE_SET_DISTANCE_ENCODER_TURN     : {menu:18, parameter:52},
-    DRIVE_SET_ACCELERATION_POSITION     : {menu:18, parameter:53},
-    DRIVE_SET_DECCELERATION_POSITION    : {menu:18, parameter:54},
-    DRIVE_SET_JOG_ACCELERATION          : {menu:19, parameter:51},
-    DRIVE_SET_JOG_DECCELERATION         : {menu:19, parameter:52},
-    DRIVE_SET_JOG_SPEED                 : {menu:19, parameter:53},
-
-    DRIVE_GET_INDICATOR                 : {menu:18, parameter:1, length:13},
-    DRIVE_GET_TRIP                      : {menu:10, parameter:20, length:10},
-    DRIVE_GET_TRIP_DATE                 : {menu:10, parameter:41, length:20},
-    DRIVE_GET_SUBTRIP                   : {menu:10, parameter:70, length:10},
-
-    PLC_SET_ENABLE_UNCOILER             : {type:plc.type.M, address:16},
-    PLC_SET_ENABLE_LEVELER              : {type:plc.type.M, address:17},
-    PLC_SET_ENABLE_RECOILER             : {type:plc.type.M, address:18},
-    PLC_SET_ENABLE_FEEDER               : {type:plc.type.M, address:19},
-    PLC_SET_ENABLE_FEEDCLAMP            : {type:plc.type.M, address:33},
-    PLC_SET_ENABLE_PUNCH1X              : {type:plc.type.M, address:34},
-
-    PLC_GET_STATE_X                     : {type:plc.type.M, address:0, length:1},
-    PLC_GET_STATE_Y                     : {type:plc.type.M, address:20, length:2},
-}
-
 
 
 // execute this
 runModbus();
 runWS();
-runUpdater();
+setTimeout(() => runUpdater(), 1000);
+
 
 
 
 async function runModbus() {
     try {
         console.log("connecting to modbus ...");
-        let serialList = (await SerialPort.list()).filter(s => s.manufacturer == cfg.MODBUS_SERIALNAME);
+        let serialList = (await SerialPort.list()).filter(s => s.manufacturer === cfg.MODBUS_SERIALNAME);
         if(serialList.length == 1) {
-            let port = new SerialPort(serialList[0].path, {
-                baudRate: cfg.MODBUS_BAUD,
-                stopBits: cfg.MODBUS_STOPBIT
-            });
-            modbusHandler.setConnection(port).open(() => {
+            let modbusPort = new SerialPort(serialList[0].path, {autoOpen: false, baudRate: cfg.MODBUS_BAUD, stopBits: cfg.MODBUS_STOPBIT});
+            modbusHandler.setConnection(modbusPort).open(() => {
                 if(typeof stateUpdaterInterval == 'object') {
                     for (const key in stateUpdaterInterval) clearInterval(stateUpdaterInterval);
                 }
                 console.log("modbus port open");
             });
         }
-        else throw Error(`there are ${this.serialList.length} serial exist. you need exactly 1 serial`);
     } catch(e) {
         server_handleError(e);
         setTimeout(() => runModbus(), 5000); 
@@ -490,4 +348,113 @@ function plcStateUpdateInterval(address, handles, interval){
             }
         });
     }, interval);
+}
+
+
+
+
+
+// create WS command list
+const WSCMD = cfg.WEBSOCKET_COMMAND;
+
+
+
+// WS map to statelist
+const MAP_WS_STATE = {
+    DRIVE_SET_LENGTH                 : (val) => ({drive_feedLength: val}),          
+    DRIVE_SET_SPEED                  : (val) => ({drive_feedSpeed: val}),           
+    DRIVE_SET_ACCELERATION_POSITION  : (val) => ({drive_feedAcceleration: val}),    
+    DRIVE_SET_DECCELERATION_POSITION : (val) => ({drive_feedDecceleration: val}),   
+    DRIVE_SET_COUNTER_PV             : (val) => ({drive_punchCountPreset: val}),    
+    DRIVE_SET_COUNTER_CV             : (val) => ({drive_punchCountDisplay: val}),   
+    DRIVE_SET_DISTANCE_MOTOR_TURN    : (val) => ({drive_distanceTurnMotor: val}),   
+    DRIVE_SET_DISTANCE_ENCODER_TURN  : (val) => ({drive_distanceTurnEncoder: val}), 
+    DRIVE_SET_JOG_ACCELERATION       : (val) => ({drive_jogAcceleration: val}),     
+    DRIVE_SET_JOG_DECCELERATION      : (val) => ({drive_jogDecceleration: val}),    
+    DRIVE_SET_JOG_SPEED              : (val) => ({drive_jogSpeed: val}),            
+    DRIVE_GET_TRIP_FLAG              : (val) => ({drive_tripStatus: val}),          
+    DRIVE_GET_TRIP                   : (val) => ({drive_tripList: val}),            
+    DRIVE_GET_SUBTRIP                : (val) => ({drive_tripSub: val}),             
+    DRIVE_GET_TRIP_DATE              : (val) => ({drive_tripDate: val}),            
+    DRIVE_GET_MODBUS_STATS           : (val) => ({drive_modbusStatus: val}),
+    
+    PLC_SET_ENABLE_UNCOILER          : (y) => {y[0]=!y[0]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_LEVELER           : (y) => {y[1]=!y[1]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_RECOILER          : (y) => {y[2]=!y[2]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_FEEDER            : (y) => {y[3]=!y[3]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_FEEDCLAMP         : (y) => {y[6]=!y[6]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_PUNCH1X           : (y) => {y[4]=!y[4]; return({plc_state_y: y})},
+
+    PLC_GET_STATE_X                  : (val) => ({plc_state_x: val}),
+    PLC_GET_STATE_Y                  : (val) => ({plc_state_y: val}),
+    PLC_GET_TRIP_FLAG                : (val) => ({plc_tripStatus: val}),
+    PLC_GET_MODBUS_STATS             : (val) => ({plc_modbusStatus: val}),
+
+    MODBUS_ERROR_LIST                : (val) => ({modbus_errorList: val}),
+}
+
+
+
+// create data state object
+let deviceState = new DataState({
+    drive_feedLength            : adapter_stateChange_ws(WSCMD.DRIVE_SET_LENGTH),
+    drive_feedSpeed             : adapter_stateChange_ws(WSCMD.DRIVE_SET_SPEED),
+    drive_feedAcceleration      : adapter_stateChange_ws(WSCMD.DRIVE_SET_ACCELERATION_POSITION),
+    drive_feedDecceleration     : adapter_stateChange_ws(WSCMD.DRIVE_SET_DECCELERATION_POSITION),
+    drive_punchCountPreset      : adapter_stateChange_ws(WSCMD.DRIVE_SET_COUNTER_PV),
+    drive_punchCountDisplay     : adapter_stateChange_ws(WSCMD.DRIVE_SET_COUNTER_CV),
+    drive_distanceTurnMotor     : adapter_stateChange_ws(WSCMD.DRIVE_SET_DISTANCE_MOTOR_TURN),
+    drive_distanceTurnEncoder   : adapter_stateChange_ws(WSCMD.DRIVE_SET_DISTANCE_ENCODER_TURN),
+    drive_threadForwardFlag     : adapter_stateChange_ws(WSCMD.DRIVE_SET_THREAD_FORWARD),
+    drive_threadReverseFlag     : adapter_stateChange_ws(WSCMD.DRIVE_SET_THREAD_REVERSE),
+    drive_jogAcceleration       : adapter_stateChange_ws(WSCMD.DRIVE_SET_JOG_ACCELERATION),
+    drive_jogDecceleration      : adapter_stateChange_ws(WSCMD.DRIVE_SET_JOG_DECCELERATION),
+    drive_jogSpeed              : adapter_stateChange_ws(WSCMD.DRIVE_SET_JOG_SPEED),
+    drive_tripStatus            : adapter_stateChange_ws(WSCMD.DRIVE_GET_TRIP_FLAG),
+    drive_tripList              : adapter_stateChange_ws(WSCMD.DRIVE_GET_TRIP),
+    drive_tripSub               : adapter_stateChange_ws(WSCMD.DRIVE_GET_SUBTRIP),
+    drive_tripDate              : adapter_stateChange_ws(WSCMD.DRIVE_GET_TRIP_DATE),
+    drive_modbusStatus          : adapter_stateChange_ws(WSCMD.DRIVE_GET_MODBUS_STATS),
+
+    plc_state_x                 : adapter_stateChange_ws(WSCMD.PLC_GET_STATE_X),
+    plc_state_y                 : adapter_stateChange_ws(WSCMD.PLC_GET_STATE_Y),
+    plc_tripStatus              : adapter_stateChange_ws(WSCMD.PLC_GET_TRIP_FLAG),
+    plc_modbusStatus            : adapter_stateChange_ws(WSCMD.PLC_GET_MODBUS_STATS),
+
+    modbus_errorList            : adapter_stateChange_ws(WSCMD.MODBUS_ERROR_LIST),
+});
+
+
+
+// create modbus address list
+const ADDRESS = {
+    DRIVE_SET_LENGTH                    : {menu:18, parameter:1},
+    DRIVE_SET_SPEED                     : {menu:18, parameter:12},
+    DRIVE_SET_COUNTER_PV                : {menu:18, parameter:13},
+    DRIVE_SET_COUNTER_CV                : {menu:18, parameter:4},
+    DRIVE_SET_COUNTER_RESET             : {menu:19, parameter:50},
+    DRIVE_SET_THREAD_FORWARD            : {menu:18, parameter:31},
+    DRIVE_SET_THREAD_REVERSE            : {menu:18, parameter:32},
+    DRIVE_SET_DISTANCE_MOTOR_TURN       : {menu:18, parameter:51},
+    DRIVE_SET_DISTANCE_ENCODER_TURN     : {menu:18, parameter:52},
+    DRIVE_SET_ACCELERATION_POSITION     : {menu:18, parameter:53},
+    DRIVE_SET_DECCELERATION_POSITION    : {menu:18, parameter:54},
+    DRIVE_SET_JOG_ACCELERATION          : {menu:19, parameter:51},
+    DRIVE_SET_JOG_DECCELERATION         : {menu:19, parameter:52},
+    DRIVE_SET_JOG_SPEED                 : {menu:19, parameter:53},
+
+    DRIVE_GET_INDICATOR                 : {menu:18, parameter:1, length:13},
+    DRIVE_GET_TRIP                      : {menu:10, parameter:20, length:10},
+    DRIVE_GET_TRIP_DATE                 : {menu:10, parameter:41, length:20},
+    DRIVE_GET_SUBTRIP                   : {menu:10, parameter:70, length:10},
+
+    PLC_SET_ENABLE_UNCOILER             : {type:plc.type.M, address:16},
+    PLC_SET_ENABLE_LEVELER              : {type:plc.type.M, address:17},
+    PLC_SET_ENABLE_RECOILER             : {type:plc.type.M, address:18},
+    PLC_SET_ENABLE_FEEDER               : {type:plc.type.M, address:19},
+    PLC_SET_ENABLE_FEEDCLAMP            : {type:plc.type.M, address:33},
+    PLC_SET_ENABLE_PUNCH1X              : {type:plc.type.M, address:34},
+
+    PLC_GET_STATE_X                     : {type:plc.type.M, address:0, length:1},
+    PLC_GET_STATE_Y                     : {type:plc.type.M, address:20, length:2},
 }
