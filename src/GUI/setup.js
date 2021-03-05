@@ -25,7 +25,7 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("distPerMotorTurn"), formLen.parse("distPerMotorTurn"));
             if(formLen.parse("distPerMotorTurn")){
-                ws_send(WS.SET_DISTANCE_MOTOR_TURN, formLen.get("distPerMotorTurn"));
+                ws_send(WS.DRIVE_SET_DISTANCE_MOTOR_TURN, formLen.get("distPerMotorTurn"));
                 btnDistPerMotorTurnSubmit.enable(false);
             }
         }
@@ -39,7 +39,7 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("distPerEncoderTurn"), formLen.parse("distPerEncoderTurn"));
             if(formLen.parse("distPerEncoderTurn")){
-                ws_send(WS.SET_DISTANCE_ENCODER_TURN, formLen.get("distPerEncoderTurn"));
+                ws_send(WS.DRIVE_SET_DISTANCE_ENCODER_TURN, formLen.get("distPerEncoderTurn"));
                 btnDistPerEncoderTurnSubmit.enable(false);
             }
         }
@@ -53,7 +53,7 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("accelPosition"), formLen.parse("accelPosition"));
             if(formLen.parse("accelPosition")){
-                ws_send(WS.SET_ACCELERATION_POSITION, formLen.get("accelPosition"));
+                ws_send(WS.DRIVE_SET_ACCELERATION_POSITION, formLen.get("accelPosition"));
                 btnAccelPos.enable(false);
             }
         }
@@ -67,7 +67,7 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("deccelPosition"), formLen.parse("deccelPosition"));
             if(formLen.parse("deccelPosition")){
-                ws_send(WS.SET_DECCELERATION_POSITION, formLen.get("deccelPosition"));
+                ws_send(WS.DRIVE_SET_DECCELERATION_POSITION, formLen.get("deccelPosition"));
                 btnAccelPos.enable(false);
             }
         }
@@ -81,7 +81,7 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("jogAccel"), formLen.parse("jogAccel"));
             if(formLen.parse("jogAccel")){
-                ws_send(WS.SET_JOG_ACCELERATION, formLen.get("jogAccel"));
+                ws_send(WS.DRIVE_SET_JOG_ACCELERATION, formLen.get("jogAccel"));
                 btnJogAccel.enable(false);
             }
         }
@@ -95,7 +95,7 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("jogDeccel"), formLen.parse("jogDeccel"));
             if(formLen.parse("jogDeccel")){
-                ws_send(WS.SET_JOG_DECCELERATION, formLen.get("jogDeccel"));
+                ws_send(WS.DRIVE_SET_JOG_DECCELERATION, formLen.get("jogDeccel"));
                 btnJogDeccel.enable(false);
             }
         }
@@ -109,7 +109,7 @@ function generateGUI() {
         callback: () => {
             console.log(formLen.get("jogSpeed"), formLen.parse("jogSpeed"));
             if(formLen.parse("jogSpeed")){
-                ws_send(WS.SET_JOG_SPEED, formLen.get("jogSpeed"));
+                ws_send(WS.DRIVE_SET_JOG_SPEED, formLen.get("jogSpeed"));
                 btnJogSpeed.enable(false);
             }
         }
@@ -204,34 +204,6 @@ function generateGUI() {
         width: "100%",
     }
 
-    // let btnSaveParameter = new ClickableButton({
-    //     parent: holderForm.element(),
-    //     text: "Save Parameter",
-    //     style: buttonStyle,
-    //     color: "#FFF",
-    //     callback: () => {
-    //         // console.log(formLen.get("length"), formLen.parse("length"));
-    //         // if(formLen.parse("length")){
-    //         //     ws_send(WS.SET_LENGTH, formLen.get("length"));
-    //         //     lenSubmit.enable(false);
-    //         // }
-    //     }
-    // });
-
-    // let btnResetDrive = new ClickableButton({
-    //     parent: holderForm.element(),
-    //     text: "Reset Drive",
-    //     style: buttonStyle,
-    //     color: "#FFF",
-    //     callback: () => {
-    //         // console.log(formLen.get("length"), formLen.parse("length"));
-    //         // if(formLen.parse("length")){
-    //         //     ws_send(WS.SET_LENGTH, formLen.get("length"));
-    //         //     lenSubmit.enable(false);
-    //         // }
-    //     }
-    // });
-
     let btnBackMainMenu = new ClickableButton({
         parent: holderForm.element(),
         text: "Back to Main Menu",
@@ -306,18 +278,13 @@ function generateGUI() {
     // message handle
     let messageHandle = new MessageViewer({ parent: document.body });
 
-    // pubsub
-    pubsub.subscribe(PUBSUB.MESSAGE_SUCCESS, (msg) => messageHandle.success(msg.text, msg.duration));
-    pubsub.subscribe(PUBSUB.MESSAGE_WARNING, (msg) => messageHandle.warning(msg.text, msg.duration));
-    pubsub.subscribe(PUBSUB.MESSAGE_ERROR, (msg) => messageHandle.error(msg.text, msg.duration));
-    
-    pubsub.subscribe(PUBSUB.DISTANCE_MOTOR_TURN, (msg) => formLen.set({distPerMotorTurn: [msg]}));
-    pubsub.subscribe(PUBSUB.DISTANCE_ENCODER_TURN, (msg) => formLen.set({distPerEncoderTurn: [msg]}));
-    pubsub.subscribe(PUBSUB.ACCELERATION_POSITION, (msg) => formLen.set({accelPosition: [msg]}));
-    pubsub.subscribe(PUBSUB.DECCELERATION_POSITION, (msg) => formLen.set({deccelPosition: [msg]}));
-    pubsub.subscribe(PUBSUB.JOG_ACCELERATION, (msg) => formLen.set({jogAccel: [msg]}));
-    pubsub.subscribe(PUBSUB.JOG_DECCELERATION, (msg) => formLen.set({jogDeccel: [msg]}));
-    pubsub.subscribe(PUBSUB.JOG_SPEED, (msg) => formLen.set({jogSpeed: [msg]}));
+    pubsub.subscribe(WS.DRIVE_SET_DISTANCE_MOTOR_TURN, (msg) => formLen.set({distPerMotorTurn: [msg]}));
+    pubsub.subscribe(WS.DRIVE_SET_DISTANCE_ENCODER_TURN, (msg) => formLen.set({distPerEncoderTurn: [msg]}));
+    pubsub.subscribe(WS.DRIVE_SET_ACCELERATION_POSITION, (msg) => formLen.set({accelPosition: [msg]}));
+    pubsub.subscribe(WS.DRIVE_SET_DECCELERATION_POSITION, (msg) => formLen.set({deccelPosition: [msg]}));
+    pubsub.subscribe(WS.DRIVE_SET_JOG_ACCELERATION, (msg) => formLen.set({jogAccel: [msg]}));
+    pubsub.subscribe(WS.DRIVE_SET_JOG_DECCELERATION, (msg) => formLen.set({jogDeccel: [msg]}));
+    pubsub.subscribe(WS.DRIVE_SET_JOG_SPEED, (msg) => formLen.set({jogSpeed: [msg]}));
 
 }
 
@@ -338,12 +305,13 @@ function ws_send(command, value) {
 }
       
 function ws_onOpen(evt) {
-    ws_send(WS.GET_DRIVE_SETTING, true);
+    ws_send("GET_STATE", true);
 }
       
 function ws_onClose(evt) {
     console.log(`WS: ${evt.type}`);
     console.log(evt.data);
+    location.reload();
 }
       
 function ws_onMessage(evt) {
@@ -351,34 +319,15 @@ function ws_onMessage(evt) {
     let parsedEvt = JSON.parse(evt.data);
     // console.log(parsedEvt);
     switch(parsedEvt.command){
-        case WS.GET_DISTANCE_MOTOR_TURN:
-            pubsub.publish(PUBSUB.DISTANCE_MOTOR_TURN, parsedEvt.value);
+        case "GET_STATE":
+            for (const key in parsedEvt.payload.state) {
+                // console.log("sending to pubsub: ", MAP_STATE_WS[key], parsedEvt.payload.state[key]);
+                pubsub.publish(MAP_STATE_WS[key], parsedEvt.payload.state[key]);
+            }
             break;
-        case WS.GET_DISTANCE_ENCODER_TURN:
-            pubsub.publish(PUBSUB.DISTANCE_ENCODER_TURN, parsedEvt.value);
-            break;
-        case WS.GET_ACCELERATION_POSITION:
-            pubsub.publish(PUBSUB.ACCELERATION_POSITION, parsedEvt.value);
-            break;
-        case WS.GET_DECCELERATION_POSITION:
-            pubsub.publish(PUBSUB.DECCELERATION_POSITION, parsedEvt.value);
-            break;
-        case WS.GET_JOG_ACCELERATION:
-            pubsub.publish(PUBSUB.JOG_ACCELERATION, parsedEvt.value);
-            break;
-        case WS.GET_JOG_DECCELERATION:
-            pubsub.publish(PUBSUB.JOG_DECCELERATION, parsedEvt.value);
-            break;
-        case WS.GET_JOG_SPEED:
-            pubsub.publish(PUBSUB.JOG_SPEED, parsedEvt.value);
-            break;
-
-        case WS.COMM_SUCCESS:
-            pubsub.publish(PUBSUB.MESSAGE_SUCCESS, {text: "success changing data", duration: 1});
-            break;
-        case WS.COMM_ERROR:
-            // pubsub.publish(PUBSUB.MESSAGE_ERROR, {text: parsedEvt.value, duration: 5});
-            break;
+        default:
+            // console.log(parsedEvt);
+            pubsub.publish(parsedEvt.command, parsedEvt.payload);
     }
 }
       
@@ -391,48 +340,68 @@ function ws_onError(evt) {
 document.addEventListener("DOMContentLoaded", () => {
     ws_load();
     generateGUI();
-})
+});
 
-const PUBSUB = {
-    DISTANCE_MOTOR_TURN: "distMotorTurn",
-    DISTANCE_ENCODER_TURN: "distEncoderTurn",
-    ACCELERATION_POSITION: "accelPos",
-    DECCELERATION_POSITION: "deccelPos",
-    JOG_ACCELERATION: "jogAccel",
-    JOG_DECCELERATION: "jogDeccel",
-    JOG_SPEED: "jogSpeed",
 
-    MESSAGE_SUCCESS: "msg-success",
-    MESSAGE_WARNING: "msg-warning",
-    MESSAGE_ERROR: "msg-error",
-
-    MODE_SINGLE: "mode-single",
-    MODE_MULTI: "mode-multi",
-}
 
 const WS = {
+    DRIVE_SET_LENGTH                    : "DRIVE_SET_LENGTH",
+    DRIVE_SET_SPEED                     : "DRIVE_SET_SPEED",
+    DRIVE_SET_COUNTER_PV                : "DRIVE_SET_COUNTER_PV",
+    DRIVE_SET_COUNTER_CV                : "DRIVE_SET_COUNTER_CV",
+    DRIVE_SET_COUNTER_RESET             : "DRIVE_SET_COUNTER_RESET",
+    DRIVE_SET_THREAD_FORWARD            : "DRIVE_SET_THREAD_FORWARD",
+    DRIVE_SET_THREAD_REVERSE            : "DRIVE_SET_THREAD_REVERSE",
+    DRIVE_SET_DISTANCE_MOTOR_TURN       : "DRIVE_SET_DISTANCE_MOTOR_TURN",
+    DRIVE_SET_DISTANCE_ENCODER_TURN     : "DRIVE_SET_DISTANCE_ENCODER_TURN",
+    DRIVE_SET_ACCELERATION_POSITION     : "DRIVE_SET_ACCELERATION_POSITION",
+    DRIVE_SET_DECCELERATION_POSITION    : "DRIVE_SET_DECCELERATION_POSITION",
+    DRIVE_SET_JOG_ACCELERATION          : "DRIVE_SET_JOG_ACCELERATION",
+    DRIVE_SET_JOG_DECCELERATION         : "DRIVE_SET_JOG_DECCELERATION",
+    DRIVE_SET_JOG_SPEED                 : "DRIVE_SET_JOG_SPEED",
 
-    GET_DRIVE_SETTING: 'Drive_Setting',
+    DRIVE_GET_INDICATOR     : "DRIVE_GET_INDICATOR",
+    DRIVE_GET_TRIP_FLAG     : "DRIVE_GET_TRIP_FLAG",
+    DRIVE_GET_TRIP          : "DRIVE_GET_TRIP",
+    DRIVE_GET_TRIP_DATE     : "DRIVE_GET_TRIP_DATE",
+    DRIVE_GET_SUBTRIP       : "DRIVE_GET_SUBTRIP",
+    DRIVE_GET_MODBUS_STATS  : "DRIVE_GET_MODBUS_STATS",
 
-    SET_DISTANCE_MOTOR_TURN: "set_distMotorTurn",
-    SET_DISTANCE_ENCODER_TURN: "set_distEncoderTurn",
-    SET_ACCELERATION_POSITION: "set_accelPos",
-    SET_DECCELERATION_POSITION: "set_deccelPos",
-    SET_JOG_ACCELERATION: "set_jogAccel",
-    SET_JOG_DECCELERATION: "set_jogDeccel",
-    SET_JOG_SPEED: "set_jogSpeed",
+    PLC_SET_ENABLE_UNCOILER : "PLC_SET_ENABLE_UNCOILER",
+    PLC_SET_ENABLE_LEVELER  : "PLC_SET_ENABLE_LEVELER",
+    PLC_SET_ENABLE_RECOILER : "PLC_SET_ENABLE_RECOILER",
+    PLC_SET_ENABLE_FEEDER   : "PLC_SET_ENABLE_FEEDER",
 
-    GET_DISTANCE_MOTOR_TURN: "get_distMotorTurn",
-    GET_DISTANCE_ENCODER_TURN: "get_distEncoderTurn",
-    GET_ACCELERATION_POSITION: "get_accelPos",
-    GET_DECCELERATION_POSITION: "get_deccelPos",
-    GET_JOG_ACCELERATION: "get_jogAccel",
-    GET_JOG_DECCELERATION: "get_jogDeccel",
-    GET_JOG_SPEED: "get_jogSpeed",
+    PLC_GET_TRIP_FLAG       : "PLC_GET_TRIP_FLAG",
+    PLC_GET_STATE_X         : "PLC_GET_STATE_X",
+    PLC_GET_STATE_Y         : "PLC_GET_STATE_Y",
+    PLC_GET_MODBUS_STATS    : "PLC_GET_MODBUS_STATS",
 
-    SAVE_PARAMETER: "save",
-    RESET_DRIVE: "reset",
+    MODBUS_ERROR_LIST       : "MODBUS_ERROR_LIST",
+}
 
-    COMM_SUCCESS: "com_success",
-    COMM_ERROR: "com_error",
+const MAP_STATE_WS = {
+    drive_feedLength            : WS.DRIVE_SET_LENGTH,
+    drive_feedSpeed             : WS.DRIVE_SET_SPEED,
+    drive_feedAcceleration      : WS.DRIVE_SET_ACCELERATION_POSITION,
+    drive_feedDecceleration     : WS.DRIVE_SET_DECCELERATION_POSITION,
+    drive_punchCountPreset      : WS.DRIVE_SET_COUNTER_PV,
+    drive_punchCountDisplay     : WS.DRIVE_SET_COUNTER_CV,
+    drive_distanceTurnMotor     : WS.DRIVE_SET_DISTANCE_MOTOR_TURN,
+    drive_distanceTurnEncoder   : WS.DRIVE_SET_DISTANCE_ENCODER_TURN,
+    drive_jogAcceleration       : WS.DRIVE_SET_JOG_ACCELERATION,
+    drive_jogDecceleration      : WS.DRIVE_SET_JOG_DECCELERATION,
+    drive_jogSpeed              : WS.DRIVE_SET_JOG_SPEED,
+    drive_tripStatus            : WS.DRIVE_GET_TRIP_FLAG,
+    drive_tripList              : WS.DRIVE_GET_TRIP,
+    drive_tripSub               : WS.DRIVE_GET_SUBTRIP,
+    drive_tripDate              : WS.DRIVE_GET_TRIP_DATE,
+    drive_modbusStatus          : WS.DRIVE_GET_MODBUS_STATS,
+
+    plc_state_x                 : WS.PLC_GET_STATE_X,
+    plc_state_y                 : WS.PLC_GET_STATE_Y,
+    plc_tripStatus              : WS.PLC_GET_TRIP_FLAG,
+    plc_modbusStatus            : WS.PLC_GET_MODBUS_STATS,
+
+    modbus_errorList            : WS.MODBUS_ERROR_LIST,
 }

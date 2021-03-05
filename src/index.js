@@ -1,14 +1,18 @@
+// configuration import
 const cfg = require('./config');
 
-const SerialHandler = require('./serial-handler');
+// serial communication import
+const { ModbusHandler } = require('./handler-modbus');
+const SerialHandler = require('./handler-serial');
+const DataState = require('./data-state');
 
-const ModbusRTU = require("modbus-serial");
-const Drive_CT_M701 = require("./drive-ct-m701");
+// serial slave object import
+const Drive_M701 = require("./drive-ct-m701");
 const PLC_FX3U = require("./plc-mitsubishi-fx3u");
 
+// web import
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: cfg.WS_PORT });
-
 const express = require('express');
 const app = express();
 app.use(express.static(`${__dirname}/GUI`))
@@ -16,780 +20,470 @@ app.listen(cfg.GUI_PORT, () => {
     console.log(`listening on port ${cfg.GUI_PORT}`);
 });
 
-var client;
-var drive = new Drive_CT_M701({
-    modbusId: cfg.DRIVE_ID,
+
+
+// create serial handler & slave object
+let modbusHandler = new ModbusHandler({
+    msgSendInterval: cfg.MODBUS_SEND_INTERVAL,
+    timeout: cfg.MODBUS_TIMEOUT,
+    retryCount: cfg.STATUS_RETRY_COUNT,
+});
+
+let drive = new Drive_M701({
+    modbusHandler: modbusHandler,
+    modbusId: 1,
     modbusTimeout: cfg.MODBUS_TIMEOUT,
 });
-var plc = new PLC_FX3U({
-    modbusId: cfg.PLC_ID,
-    modbusTimeout: cfg.MODBUS_TIMEOUT
+
+let plc = new PLC_FX3U({
+    modbusHandler: modbusHandler,
+    modbusId: 2,
+    modbusTimeout: cfg.MODBUS_TIMEOUT,
 });
 
+
+
+// create WS command list
+const WSCMD = {
+    DRIVE_SET_LENGTH                    : "DRIVE_SET_LENGTH",
+    DRIVE_SET_SPEED                     : "DRIVE_SET_SPEED",
+    DRIVE_SET_COUNTER_PV                : "DRIVE_SET_COUNTER_PV",
+    DRIVE_SET_COUNTER_CV                : "DRIVE_SET_COUNTER_CV",
+    DRIVE_SET_COUNTER_RESET             : "DRIVE_SET_COUNTER_RESET",
+    DRIVE_SET_THREAD_FORWARD            : "DRIVE_SET_THREAD_FORWARD",
+    DRIVE_SET_THREAD_REVERSE            : "DRIVE_SET_THREAD_REVERSE",
+    DRIVE_SET_DISTANCE_MOTOR_TURN       : "DRIVE_SET_DISTANCE_MOTOR_TURN",
+    DRIVE_SET_DISTANCE_ENCODER_TURN     : "DRIVE_SET_DISTANCE_ENCODER_TURN",
+    DRIVE_SET_ACCELERATION_POSITION     : "DRIVE_SET_ACCELERATION_POSITION",
+    DRIVE_SET_DECCELERATION_POSITION    : "DRIVE_SET_DECCELERATION_POSITION",
+    DRIVE_SET_JOG_ACCELERATION          : "DRIVE_SET_JOG_ACCELERATION",
+    DRIVE_SET_JOG_DECCELERATION         : "DRIVE_SET_JOG_DECCELERATION",
+    DRIVE_SET_JOG_SPEED                 : "DRIVE_SET_JOG_SPEED",
+
+    DRIVE_GET_INDICATOR                 : "DRIVE_GET_INDICATOR",
+    DRIVE_GET_TRIP_FLAG                 : "DRIVE_GET_TRIP_FLAG",
+    DRIVE_GET_TRIP                      : "DRIVE_GET_TRIP",
+    DRIVE_GET_TRIP_DATE                 : "DRIVE_GET_TRIP_DATE",
+    DRIVE_GET_SUBTRIP                   : "DRIVE_GET_SUBTRIP",
+    DRIVE_GET_MODBUS_STATS              : "DRIVE_GET_MODBUS_STATS",
+
+    PLC_SET_ENABLE_UNCOILER             : "PLC_SET_ENABLE_UNCOILER",
+    PLC_SET_ENABLE_LEVELER              : "PLC_SET_ENABLE_LEVELER",
+    PLC_SET_ENABLE_RECOILER             : "PLC_SET_ENABLE_RECOILER",
+    PLC_SET_ENABLE_FEEDER               : "PLC_SET_ENABLE_FEEDER",
+    PLC_SET_ENABLE_FEEDCLAMP            : "PLC_SET_ENABLE_FEEDCLAMP",
+    PLC_SET_ENABLE_PUNCH1X              : "PLC_SET_ENABLE_PUNCH1X",
+
+    PLC_GET_TRIP_FLAG                   : "PLC_GET_TRIP_FLAG",
+    PLC_GET_STATE_X                     : "PLC_GET_STATE_X",
+    PLC_GET_STATE_Y                     : "PLC_GET_STATE_Y",
+    PLC_GET_MODBUS_STATS                : "PLC_GET_MODBUS_STATS",
+
+    MODBUS_ERROR_LIST                   : "MODBUS_ERROR_LIST",
+}
+
+
+
+// WS map to statelist
+const MAP_WS_STATE = {
+    DRIVE_SET_LENGTH                 : (val) => ({drive_feedLength: val}),          
+    DRIVE_SET_SPEED                  : (val) => ({drive_feedSpeed: val}),           
+    DRIVE_SET_ACCELERATION_POSITION  : (val) => ({drive_feedAcceleration: val}),    
+    DRIVE_SET_DECCELERATION_POSITION : (val) => ({drive_feedDecceleration: val}),   
+    DRIVE_SET_COUNTER_PV             : (val) => ({drive_punchCountPreset: val}),    
+    DRIVE_SET_COUNTER_CV             : (val) => ({drive_punchCountDisplay: val}),   
+    DRIVE_SET_DISTANCE_MOTOR_TURN    : (val) => ({drive_distanceTurnMotor: val}),   
+    DRIVE_SET_DISTANCE_ENCODER_TURN  : (val) => ({drive_distanceTurnEncoder: val}), 
+    DRIVE_SET_JOG_ACCELERATION       : (val) => ({drive_jogAcceleration: val}),     
+    DRIVE_SET_JOG_DECCELERATION      : (val) => ({drive_jogDecceleration: val}),    
+    DRIVE_SET_JOG_SPEED              : (val) => ({drive_jogSpeed: val}),            
+    DRIVE_GET_TRIP_FLAG              : (val) => ({drive_tripStatus: val}),          
+    DRIVE_GET_TRIP                   : (val) => ({drive_tripList: val}),            
+    DRIVE_GET_SUBTRIP                : (val) => ({drive_tripSub: val}),             
+    DRIVE_GET_TRIP_DATE              : (val) => ({drive_tripDate: val}),            
+    DRIVE_GET_MODBUS_STATS           : (val) => ({drive_modbusStatus: val}),
+    
+    PLC_SET_ENABLE_UNCOILER          : (y) => {y[0]=!y[0]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_LEVELER           : (y) => {y[1]=!y[1]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_RECOILER          : (y) => {y[2]=!y[2]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_FEEDER            : (y) => {y[3]=!y[3]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_FEEDCLAMP         : (y) => {y[6]=!y[6]; return({plc_state_y: y})},
+    PLC_SET_ENABLE_PUNCH1X           : (y) => {y[4]=!y[4]; return({plc_state_y: y})},
+
+    PLC_GET_STATE_X                  : (val) => ({plc_state_x: val}),
+    PLC_GET_STATE_Y                  : (val) => ({plc_state_y: val}),
+    PLC_GET_TRIP_FLAG                : (val) => ({plc_tripStatus: val}),
+    PLC_GET_MODBUS_STATS             : (val) => ({plc_modbusStatus: val}),
+
+    MODBUS_ERROR_LIST                : (val) => ({modbus_errorList: val}),
+}
+
+
+
+// create data state object
+let deviceState = new DataState({
+    drive_feedLength            : adapter_stateChange_ws(WSCMD.DRIVE_SET_LENGTH),
+    drive_feedSpeed             : adapter_stateChange_ws(WSCMD.DRIVE_SET_SPEED),
+    drive_feedAcceleration      : adapter_stateChange_ws(WSCMD.DRIVE_SET_ACCELERATION_POSITION),
+    drive_feedDecceleration     : adapter_stateChange_ws(WSCMD.DRIVE_SET_DECCELERATION_POSITION),
+    drive_punchCountPreset      : adapter_stateChange_ws(WSCMD.DRIVE_SET_COUNTER_PV),
+    drive_punchCountDisplay     : adapter_stateChange_ws(WSCMD.DRIVE_SET_COUNTER_CV),
+    drive_distanceTurnMotor     : adapter_stateChange_ws(WSCMD.DRIVE_SET_DISTANCE_MOTOR_TURN),
+    drive_distanceTurnEncoder   : adapter_stateChange_ws(WSCMD.DRIVE_SET_DISTANCE_ENCODER_TURN),
+    drive_threadForwardFlag     : adapter_stateChange_ws(WSCMD.DRIVE_SET_THREAD_FORWARD),
+    drive_threadReverseFlag     : adapter_stateChange_ws(WSCMD.DRIVE_SET_THREAD_REVERSE),
+    drive_jogAcceleration       : adapter_stateChange_ws(WSCMD.DRIVE_SET_JOG_ACCELERATION),
+    drive_jogDecceleration      : adapter_stateChange_ws(WSCMD.DRIVE_SET_JOG_DECCELERATION),
+    drive_jogSpeed              : adapter_stateChange_ws(WSCMD.DRIVE_SET_JOG_SPEED),
+    drive_tripStatus            : adapter_stateChange_ws(WSCMD.DRIVE_GET_TRIP_FLAG),
+    drive_tripList              : adapter_stateChange_ws(WSCMD.DRIVE_GET_TRIP),
+    drive_tripSub               : adapter_stateChange_ws(WSCMD.DRIVE_GET_SUBTRIP),
+    drive_tripDate              : adapter_stateChange_ws(WSCMD.DRIVE_GET_TRIP_DATE),
+    drive_modbusStatus          : adapter_stateChange_ws(WSCMD.DRIVE_GET_MODBUS_STATS),
+
+    plc_state_x                 : adapter_stateChange_ws(WSCMD.PLC_GET_STATE_X),
+    plc_state_y                 : adapter_stateChange_ws(WSCMD.PLC_GET_STATE_Y),
+    plc_tripStatus              : adapter_stateChange_ws(WSCMD.PLC_GET_TRIP_FLAG),
+    plc_modbusStatus            : adapter_stateChange_ws(WSCMD.PLC_GET_MODBUS_STATS),
+
+    modbus_errorList            : adapter_stateChange_ws(WSCMD.MODBUS_ERROR_LIST),
+});
+
+
+
+// create modbus address list
+const ADDRESS = {
+    DRIVE_SET_LENGTH                    : {menu:18, parameter:1},
+    DRIVE_SET_SPEED                     : {menu:18, parameter:12},
+    DRIVE_SET_COUNTER_PV                : {menu:18, parameter:13},
+    DRIVE_SET_COUNTER_CV                : {menu:18, parameter:4},
+    DRIVE_SET_COUNTER_RESET             : {menu:19, parameter:50},
+    DRIVE_SET_THREAD_FORWARD            : {menu:18, parameter:31},
+    DRIVE_SET_THREAD_REVERSE            : {menu:18, parameter:32},
+    DRIVE_SET_DISTANCE_MOTOR_TURN       : {menu:18, parameter:51},
+    DRIVE_SET_DISTANCE_ENCODER_TURN     : {menu:18, parameter:52},
+    DRIVE_SET_ACCELERATION_POSITION     : {menu:18, parameter:53},
+    DRIVE_SET_DECCELERATION_POSITION    : {menu:18, parameter:54},
+    DRIVE_SET_JOG_ACCELERATION          : {menu:19, parameter:51},
+    DRIVE_SET_JOG_DECCELERATION         : {menu:19, parameter:52},
+    DRIVE_SET_JOG_SPEED                 : {menu:19, parameter:53},
+
+    DRIVE_GET_INDICATOR                 : {menu:18, parameter:1, length:13},
+    DRIVE_GET_TRIP                      : {menu:10, parameter:20, length:10},
+    DRIVE_GET_TRIP_DATE                 : {menu:10, parameter:41, length:20},
+    DRIVE_GET_SUBTRIP                   : {menu:10, parameter:70, length:10},
+
+    PLC_SET_ENABLE_UNCOILER             : {type:plc.type.M, address:16},
+    PLC_SET_ENABLE_LEVELER              : {type:plc.type.M, address:17},
+    PLC_SET_ENABLE_RECOILER             : {type:plc.type.M, address:18},
+    PLC_SET_ENABLE_FEEDER               : {type:plc.type.M, address:19},
+    PLC_SET_ENABLE_FEEDCLAMP            : {type:plc.type.M, address:33},
+    PLC_SET_ENABLE_PUNCH1X              : {type:plc.type.M, address:34},
+
+    PLC_GET_STATE_X                     : {type:plc.type.M, address:0, length:1},
+    PLC_GET_STATE_Y                     : {type:plc.type.M, address:20, length:2},
+}
+
+
+
+// execute this
 runModbus();
 runWS();
+runUpdater();
 
-var statusCounter = {
-    PLC: 0,
-    Drive: 0,
-};
 
 
 async function runModbus() {
     try {
-        console.log("connecting to modbus");
-        modbusSerialHandler = await new SerialHandler({ baudRate: cfg.MODBUS_BAUD, stopBits: cfg.MODBUS_STOPBIT}).init();
-        modbusPort = modbusSerialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
-        console.log(modbusPort);
-        client = new ModbusRTU(modbusPort);
-        client.open(() => console.log("modbus port OPEN"));
-        drive.setClient(client);
-        plc.setClient(client);
-    } catch(e) { 
-        handlePLCStatus(false);
-        handleDriveStatus(false);
+        console.log("connecting to modbus ...");
+        let serialHandler = await new SerialHandler({ baudRate: cfg.MODBUS_BAUD, stopBits: cfg.MODBUS_STOPBIT}).init();
+        let modbusPort = serialHandler.filterByManufacturer(cfg.MODBUS_SERIALNAME).get();
+        modbusHandler.setConnection(modbusPort);
+        modbusHandler.open(() => {
+            if(typeof stateUpdaterInterval == 'object') {
+                for (const key in stateUpdaterInterval) clearInterval(stateUpdaterInterval);
+            }
+            console.log("modbus port open");
+        });
+    } catch(e) {
+        server_handleError(e);
         setTimeout(() => runModbus(), 5000); 
     }
 }
 
 
-function checkIfBothOffline() {
-    if( statusCounter.PLC > cfg.STATUS_RETRY_COUNT && 
-        statusCounter.Drive > cfg.STATUS_RETRY_COUNT && 
-        client != undefined){
-            client.close(runModbus);
-            client = undefined;
-    }
-}
-
 
 async function runWS() {
     wss.on('connection', (ws) => {
-        ws.on('open', function open() {
-            ws.send('connected to websocket');
-        });
         ws.on('message', (message) => {
-            console.log('received: %s', message);
             parsedMsg = JSON.parse(message);
-            console.log('parsed', parsedMsg);
-            handleWebsocketMessage(parsedMsg);
+            console.log(parsedMsg);
+            ws_handleIncoming(ws, parsedMsg.command, parsedMsg.value);
         });
     });
 }
 
 
-function handleSendWebsocket(payload) {
-    // console.log(payload);
+function ws_handleIncoming(client, command, value) {
+    try {
+        switch(command) {
+            case "GET_STATE":
+                client.send(JSON.stringify({
+                    command,
+                    payload: {
+                        state: deviceState.state,
+                        drive_tripCode: drive.tripCode,
+                    }
+                }))
+                break;
+
+            case WSCMD.DRIVE_SET_LENGTH                 :
+            case WSCMD.DRIVE_SET_SPEED                  :
+            case WSCMD.DRIVE_SET_COUNTER_PV             :
+            case WSCMD.DRIVE_SET_COUNTER_CV             :
+            case WSCMD.DRIVE_SET_COUNTER_RESET          :
+            case WSCMD.DRIVE_SET_DISTANCE_MOTOR_TURN    :
+            case WSCMD.DRIVE_SET_DISTANCE_ENCODER_TURN  :
+            case WSCMD.DRIVE_SET_ACCELERATION_POSITION  :
+            case WSCMD.DRIVE_SET_DECCELERATION_POSITION :
+            case WSCMD.DRIVE_SET_JOG_ACCELERATION       :
+            case WSCMD.DRIVE_SET_JOG_DECCELERATION      :
+            case WSCMD.DRIVE_SET_JOG_SPEED              :
+                drive.writeParameter({
+                    ...ADDRESS[command],
+                    value,
+                    callback: (e,s) => deviceState.update({...MAP_WS_STATE[command](s)}),
+                });
+                break;
+            
+            case WSCMD.DRIVE_SET_THREAD_FORWARD :
+                drive.writeParameter({
+                    ...ADDRESS.DRIVE_SET_THREAD_REVERSE,
+                    value: 0,
+                    callback: (e,s) => {
+                        if(s !== null) {
+                            deviceState.update({
+                                drive_threadReverseFlag: s
+                            });
+                            drive.toggleParameter({
+                                ...ADDRESS[command],
+                                toggleOn: 1,
+                                toggleOff: 0,
+                                callback: (er, sc) => {
+                                    if(sc !== null) deviceState.update({
+                                        drive_threadForwardFlag: sc
+                                    });
+                                }
+                            });
+                        }
+                    },
+                });
+                break;
+                
+            case WSCMD.DRIVE_SET_THREAD_REVERSE :
+                drive.writeParameter({
+                    ...ADDRESS.DRIVE_SET_THREAD_FORWARD,
+                    value: 0,
+                    callback: (e,s) => {
+                        if(s !== null) {
+                            deviceState.update({
+                                drive_threadForwardFlag: s
+                            })
+                            drive.toggleParameter({
+                                ...ADDRESS[command],
+                                toggleOn: 1,
+                                toggleOff: 0,
+                                callback: (er, sc) => {
+                                    if(sc !== null) deviceState.update({
+                                        drive_threadReverseFlag: sc
+                                    })
+                                }
+                            });
+                        }
+                    },
+                });
+                break;
+            
+            case WSCMD.PLC_SET_ENABLE_UNCOILER  :
+            case WSCMD.PLC_SET_ENABLE_LEVELER   :
+            case WSCMD.PLC_SET_ENABLE_RECOILER  :
+            case WSCMD.PLC_SET_ENABLE_FEEDER    :
+            case WSCMD.PLC_SET_ENABLE_FEEDCLAMP :
+            case WSCMD.PLC_SET_ENABLE_PUNCH1X   :
+                plc.pulse({
+                    ...ADDRESS[command],
+                    callback: (e,s) => {
+                        if(s!==null) {
+                            console.log("OLD", deviceState.state.plc_state_y);
+                            console.log("NEW", MAP_WS_STATE[command](deviceState.state.plc_state_y));
+                            deviceState.update({
+                                ...MAP_WS_STATE[command](deviceState.state.plc_state_y)
+                            });
+                        }
+                    }
+                });
+                break;
+        }
+    } catch(e) {
+        server_handleError(e);
+    }
+}
+
+
+function ws_broadcast(command, payload) {
     wss.clients.forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(payload));
+            client.send(JSON.stringify({command, payload}));
         }
     });
 }
 
 
-function handlePLCStatus(onlineStatus) {
-    if(!onlineStatus){
-        statusCounter.PLC += 1;
-        if(statusCounter.PLC > cfg.STATUS_RETRY_COUNT) {
-            handleSendWebsocket({
-                command: WS.PLC_STATUS,
-                value: onlineStatus,
+
+function runUpdater() {
+    console.log("running updater");
+
+    // update drive main indicator
+    drivestateUpdateInterval(
+        ADDRESS.DRIVE_GET_INDICATOR,
+        (err, success) => {
+            if(success) deviceState.update({
+                drive_feedLength            : success[0],
+                drive_feedSpeed             : success[1],
+                drive_tripStatus            : success[2],
+                drive_punchCountDisplay     : success[3],
+                drive_distanceTurnMotor     : success[4],
+                drive_distanceTurnEncoder   : success[5],
+                drive_feedAcceleration      : success[6],
+                drive_feedDecceleration     : success[7],
+                drive_jogAcceleration       : success[8],
+                drive_jogDecceleration      : success[9],
+                drive_jogSpeed              : success[10],
+                drive_punchCountPreset      : success[12],
             });
-            checkIfBothOffline();
-        }
-    } else {
-        statusCounter.PLC = 0;
-        handleSendWebsocket({
-            command: WS.PLC_STATUS,
-            value: onlineStatus,
-        })
+        },
+        cfg.STATE_UPDATE_INTERVAL_PRIMARY
+    )
+
+    // update drive trip, subtrip and trip date
+    drivestateUpdateInterval(
+        ADDRESS.DRIVE_GET_TRIP,
+        (err, success) => {
+            if(success) deviceState.update({
+                drive_tripList: success,
+            });
+        },
+        cfg.STATE_UPDATE_INTERVAL_SECONDARY
+    )
+    drivestateUpdateInterval(
+        ADDRESS.DRIVE_GET_SUBTRIP,
+        (err, success) => {
+            if(success) deviceState.update({
+                drive_tripSub: success,
+            });
+        },
+        cfg.STATE_UPDATE_INTERVAL_SECONDARY
+    )
+    drivestateUpdateInterval(
+        ADDRESS.DRIVE_GET_TRIP_DATE,
+        (err, success) => {
+            if(success) deviceState.update({
+                drive_tripDate: success,
+            });
+        },
+        cfg.STATE_UPDATE_INTERVAL_SECONDARY
+    )
+
+    // update plc Y state
+    plcStateUpdateInterval(
+        ADDRESS.PLC_GET_STATE_Y,
+        (err, success) => {
+            if(success) deviceState.update({
+                plc_state_y : success,
+                plc_tripStatus  : success[12],
+            });
+        },
+        cfg.STATE_UPDATE_INTERVAL_PRIMARY
+    )
+
+    // update plc X state
+    plcStateUpdateInterval(
+        ADDRESS.PLC_GET_STATE_X,
+        (err, success) => {
+            if(success) deviceState.update({
+                plc_state_x     : success,
+            });
+        },
+        cfg.STATE_UPDATE_INTERVAL_SECONDARY
+    )
+}
+
+
+
+// send error data to web interface 
+function server_handleError(err) {
+    let errorStats = {
+        error: err.message,
+        timestamp: Date.now(),
+    };
+    if(err.message == 'Port Not Open' && modbusHandler.isOpen){
+        // terminate all modbus device online state.
+        deviceState.update({ drive_modbusStatus: false });
+        deviceState.update({ plc_modbusStatus: false });
+        // close connection, then try to reconnect.
+        modbusHandler.close();
+        runModbus();
     }
-}
-
-
-function handleDriveStatus(onlineStatus) {
-    if(!onlineStatus){
-        statusCounter.Drive += 1;
-        if(statusCounter.Drive > cfg.STATUS_RETRY_COUNT) {
-            handleSendWebsocket({
-                command: WS.DRIVE_STATUS,
-                value: onlineStatus,
-            });
-            checkIfBothOffline();
-        }
-    } else {
-        statusCounter.Drive = 0;
-        handleSendWebsocket({
-            command: WS.DRIVE_STATUS,
-            value: onlineStatus,
-        })
-    }
-}
-
-
-function handleSuccessCommand(cmd) {
-    handleSendWebsocket({
-        command: WS.COMM_SUCCESS,
-        value: cmd,
-    });
-}
-
-
-function handleErrorCommand(err) {
-    handleSendWebsocket({
-        command: WS.COMM_ERROR,
-        value: err.message,
-    });
-    console.error(err);
-}
-
-
-function handleWebsocketMessage(msg) {
-    try {
-        switch(msg.command){
-            case WS.SET_DISTANCE_MOTOR_TURN:
-                handleDefaultSetCommand(DRIVE.DISTANCE_MOTOR_TURN, WS.SET_DISTANCE_MOTOR_TURN, msg.value);
-                break;
-            case WS.SET_DISTANCE_ENCODER_TURN:
-                handleDefaultSetCommand(DRIVE.DISTANCE_ENCODER_TURN, WS.SET_DISTANCE_ENCODER_TURN, msg.value);
-                break;
-            case WS.SET_ACCELERATION_POSITION:
-                handleDefaultSetCommand(DRIVE.ACCELERATION_POSITION, WS.SET_ACCELERATION_POSITION, msg.value);
-                break;
-            case WS.SET_DECCELERATION_POSITION:
-                handleDefaultSetCommand(DRIVE.DECCELERATION_POSITION, WS.SET_DECCELERATION_POSITION, msg.value);
-                break;
-            case WS.SET_JOG_ACCELERATION:
-                handleDefaultSetCommand(DRIVE.JOG_ACCELERATION, WS.SET_JOG_ACCELERATION, msg.value);
-                break;
-            case WS.SET_JOG_DECCELERATION:
-                handleDefaultSetCommand(DRIVE.JOG_DECCELERATION, WS.SET_JOG_DECCELERATION, msg.value);
-                break;
-            case WS.SET_JOG_SPEED:
-                handleDefaultSetCommand(DRIVE.JOG_SPEED, WS.SET_JOG_SPEED, msg.value);
-                break;
-            case WS.SET_LENGTH:
-                handleDefaultSetCommand(DRIVE.LENGTH, WS.SET_LENGTH, msg.value);
-                break;
-            case WS.SET_SPEED:
-                handleDefaultSetCommand(DRIVE.SPEED, WS.SET_SPEED, msg.value);
-                break;
-            case WS.RESET_COUNT:
-                handleDefaultSetCommand(DRIVE.COUNTER_RESET, WS.RESET_COUNT, msg.value, () => {
-                    setTimeout(() => {handleDefaultGetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT)}, 200);
-                });
-                break;
-            case WS.PRESET_COUNT:
-                handleDefaultSetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT, msg.value, () => {
-                    setTimeout(() => {handleDefaultGetCommand(DRIVE.COUNTER_PV, WS.PRESET_COUNT)}, 200);
-                });
-                break;
-            case WS.SET_THREAD_REVERSE:
-                handleThreadRevCommand();
-                break;
-            case WS.SET_THREAD_FORWARD:
-                handleThreadFwdCommand();
-                break;
-            case WS.GET_DRIVE_DASHBOARD:
-                handleDriveDashboard();
-                break;
-            case WS.GET_DRIVE_DASHBOARD_UPDATE:
-                handleDriveDashboardUpdate();
-                break;
-            case WS.GET_DRIVE_SETTING:
-                handleDriveSetting();
-                break;
-            case WS.GET_COUNT:
-                handleIntervalGetCommand(DRIVE.COUNTER_CV, WS.GET_COUNT);
-                break;
-            case WS.RESET_DRIVE:
-                console.log('reset called', msg);
-                drive.reset()
-                    .then(() => handleSuccessCommand(WS.RESET_DRIVE))
-                    .catch(handleErrorCommand);
-                break;
-            case WS.GET_DRIVE_TRIP:
-                handleDriveTrip();
-                break;
-            case WS.GET_DRIVE_SUBTRIP:
-                handleDriveSubtrip();
-                break;
-            case WS.GET_DRIVE_TRIP_DATE:
-                handleDriveTripDate();
-                break;
-
-            case WS.GET_PLC_DASHBOARD:
-                handlePlcGetIndicator();
-                break;
-
-            case WS.SET_UNCOILER:
-                handlePlcSetDefault_M(16, true, msg.command, () => {
-                    setTimeout(() => {
-                        handlePlcSetDefault_M(16, false)
-                    }, 200);
-                });
-                break;
-            
-            case WS.SET_LEVELER:
-                handlePlcSetDefault_M(17, true, msg.command, () => {
-                    setTimeout(() => {
-                        handlePlcSetDefault_M(17, false)
-                    }, 200);
-                });
-                break;
-            
-            case WS.SET_RECOILER:
-                handlePlcSetDefault_M(18, true, msg.command, () => {
-                    setTimeout(() => {
-                        handlePlcSetDefault_M(18, false)
-                    }, 200);
-                });
-                break;
-
-            case WS.SET_FEEDER:
-                handlePlcSetDefault_M(19, true, msg.command, () => {
-                    setTimeout(() => {
-                        handlePlcSetDefault_M(19, false)
-                    }, 200);
-                });
-                break;
-            
-            case WS.PLC_RUN:
-                handlePlcGetDefault_M(32, 1, msg.command, console.log)
-                break;
-
-        }
-    } catch(e) { handleErrorCommand(e) }
-}
-
-
-function handlePlcSetDefault_M(address, value, wsCommand = undefined, callback = ()=>{}) {
-    plc.write_M(address, value)
-        .then(v => {
-            callback(v)
-            if(wsCommand) handleSendWebsocket({
-                command: wsCommand,
-                value: v,
-            });
-            handlePLCStatus(true);
-        })
-        .catch(() => {
-            handlePLCStatus(false);
-            setTimeout(() => {
-                handlePlcSetDefault_M(address, value, wsCommand, callback)
-            }, cfg.RETRY_TIMEOUT);
-        });
-}
-
-
-function handlePlcGetDefault_M(address, length, wsCommand, callback = ()=>{}) {
-    plc.read_M(address, length)
-        .then(v => {
-            callback(v)
-            handleSendWebsocket({
-                command: wsCommand,
-                value: v,
-            });
-            handlePLCStatus(true);
-        })
-        .catch(() => {
-            handlePLCStatus(false);
-            setTimeout(() => {
-                handlePlcGetDefault_M(address, length, wsCommand, callback)
-            }, cfg.RETRY_TIMEOUT);
-        });
-}
-
-
-function handlePlcGetIndicator() {
-    plc.read_M(20,1)
-        .then(v => {
-            handleSendWebsocket({
-                command: WS.GET_UNCOILER,
-                value: v.data[0],
-            });
-            handleSendWebsocket({
-                command: WS.GET_LEVELER,
-                value: v.data[1],
-            });
-            handleSendWebsocket({
-                command: WS.GET_RECOILER,
-                value: v.data[2],
-            });
-            handleSendWebsocket({
-                command: WS.GET_FEEDER,
-                value: v.data[3],
-            });
-            handlePLCStatus(true);
-        })
-        .catch(() => {
-            handlePLCStatus(false);
-        });
-}
-
-
-function handleDriveDashboard() {
-    drive.readParameter(DRIVE.INIT_DASHBOARD)
-        .then(v => {
-            handleSendWebsocket({
-                command: WS.GET_LENGTH,
-                value: v.data[0],
-            });
-            handleSendWebsocket({
-                command: WS.GET_SPEED,
-                value: v.data[1],
-            });
-            handleSendWebsocket({
-                command: WS.DRIVE_TRIP,
-                value: v.data[2] == 1 ? false : true,
-            });
-            handleSendWebsocket({
-                command: WS.GET_COUNT,
-                value: v.data[3],
-            });
-            handleDriveStatus(true);
-        })
-        .catch((e) => {
-            handleDriveStatus(false);
-            setTimeout(() => {handleDriveDashboard()}, cfg.RETRY_TIMEOUT);
-        });
-}
-
-
-function handleDriveDashboardUpdate() {
-    drive.readParameter(DRIVE.UPDATE_DASHBOARD)
-        .then(v => {
-            handleSendWebsocket({
-                command: WS.DRIVE_TRIP,
-                value: v.data[0] == 1 ? false : true,
-            });
-            handleSendWebsocket({
-                command: WS.GET_COUNT,
-                value: v.data[1],
-            });
-            handleDriveStatus(true);
-        })
-        .catch((e) => {
-            handleDriveStatus(false);
-        });
-}
-
-
-function handleDriveSetting() {
-    drive.readParameter(DRIVE.INIT_SETTING)
-        .then(v => {
-            handleSendWebsocket({
-                command: WS.GET_DISTANCE_MOTOR_TURN,
-                value: v.data[0],
-            });
-            handleSendWebsocket({
-                command: WS.GET_DISTANCE_ENCODER_TURN,
-                value: v.data[1],
-            });
-            handleSendWebsocket({
-                command: WS.GET_ACCELERATION_POSITION,
-                value: v.data[2],
-            });
-            handleSendWebsocket({
-                command: WS.GET_DECCELERATION_POSITION,
-                value: v.data[3],
-            });
-            handleSendWebsocket({
-                command: WS.GET_JOG_ACCELERATION,
-                value: v.data[4],
-            });
-            handleSendWebsocket({
-                command: WS.GET_JOG_DECCELERATION,
-                value: v.data[5],
-            });
-            handleSendWebsocket({
-                command: WS.GET_JOG_SPEED,
-                value: v.data[6],
-            });
-        })
-        .catch((e) => {
-            // handleErrorCommand(e);
-            setTimeout(() => {handleDriveSetting()}, cfg.RETRY_TIMEOUT);
-        });
-}
-
-function handleDriveTrip() {
-    var tripData = new Object();
-    _handleDriveTrip_P1(tripData);
-    setTimeout(() => _handleDriveTrip_P2(tripData), 200);
-}
-
-
-function _handleDriveTrip_P1(tripData) {
-    drive.readParameter(DRIVE.GET_TRIP_P1)
-        .then(v => {
-            tripData.P1 = v.data;
-            if(tripData.P1 && tripData.P2){
-                handleSendWebsocket({
-                    command: WS.GET_DRIVE_TRIP,
-                    value: [].concat(tripData.P1, tripData.P2),
-                });
-            } else {
-                console.log("INCOMPLETE TRIP", tripData);
-            }
-        })
-        .catch((e) => {
-            console.error(e);
-            setTimeout(() => _handleDriveTrip_P1(tripData), cfg.RETRY_TIMEOUT);
-        });
-}
-
-
-function _handleDriveTrip_P2(tripData) {
-    drive.readParameter(DRIVE.GET_TRIP_P2)
-        .then(v => {
-            tripData.P2 = v.data;
-            if(tripData.P1 && tripData.P2){
-                handleSendWebsocket({
-                    command: WS.GET_DRIVE_TRIP,
-                    value: [].concat(tripData.P1, tripData.P2),
-                });
-            } else {
-                console.log("INCOMPLETE TRIP", tripData);
-            }
-        })
-        .catch((e) => {
-            console.error(e);
-            setTimeout(() => _handleDriveTrip_P2(tripData), cfg.RETRY_TIMEOUT);
-        });
-}
-
-
-function handleDriveSubtrip() {
-    var tripData = new Object();
-    _handleDriveSubtrip_P1(tripData);
-    setTimeout(() => _handleDriveSubtrip_P2(tripData), 200);
-}
-
-
-function _handleDriveSubtrip_P1(tripData) {
-    drive.readParameter(DRIVE.GET_SUBTRIP_P1)
-        .then(v => {
-            tripData.P1 = v.data;
-            if(tripData.P1 && tripData.P2){
-                handleSendWebsocket({
-                    command: WS.GET_DRIVE_SUBTRIP,
-                    value: [].concat(tripData.P1, tripData.P2),
-                });
-            } else {
-                console.log("INCOMPLETE TRIP", tripData);
-            }
-        })
-        .catch((e) => {
-            console.error(e);
-            setTimeout(() => _handleDriveSubtrip_P1(tripData), cfg.RETRY_TIMEOUT);
-        });
-}
-
-
-function _handleDriveSubtrip_P2(tripData) {
-    drive.readParameter(DRIVE.GET_SUBTRIP_P2)
-        .then(v => {
-            tripData.P2 = v.data;
-            if(tripData.P1 && tripData.P2){
-                handleSendWebsocket({
-                    command: WS.GET_DRIVE_SUBTRIP,
-                    value: [].concat(tripData.P1, tripData.P2),
-                });
-            } else {
-                console.log("INCOMPLETE TRIP", tripData);
-            }
-        })
-        .catch((e) => {
-            console.error(e);
-            setTimeout(() => _handleDriveSubtrip_P2(tripData), cfg.RETRY_TIMEOUT);
-        });
-}
-
-
-function handleDriveTripDate() {
-    var tripData = new Object();
-    _handleDriveTripDate_P1(tripData);
-    setTimeout(() => _handleDriveTripDate_P2(tripData), 200);
-    setTimeout(() => _handleDriveTripDate_P3(tripData), 400);
-    setTimeout(() => _handleDriveTripDate_P4(tripData), 600);
-}
-
-
-function _handleDriveTripDate_P1(tripData) {
-    drive.readParameter(DRIVE.GET_TRIP_DATE_P1)
-        .then(v => {
-            tripData.P1 = v.data;
-            if(tripData.P1 && tripData.P2 && tripData.P3 && tripData.P4){
-                handleSendWebsocket({
-                    command: WS.GET_DRIVE_TRIP_DATE,
-                    value: [].concat(tripData.P1, tripData.P2, tripData.P3, tripData.P4),
-                });
-            } else {
-                console.log("INCOMPLETE TRIP", tripData);
-            }
-        })
-        .catch((e) => {
-            console.error(e);
-            setTimeout(() => _handleDriveTripDate_P1(tripData), cfg.RETRY_TIMEOUT);
-        });
-}
-
-
-function _handleDriveTripDate_P2(tripData) {
-    drive.readParameter(DRIVE.GET_TRIP_DATE_P2)
-        .then(v => {
-            tripData.P2 = v.data;
-            if(tripData.P1 && tripData.P2 && tripData.P3 && tripData.P4){
-                handleSendWebsocket({
-                    command: WS.GET_DRIVE_TRIP_DATE,
-                    value: [].concat(tripData.P1, tripData.P2, tripData.P3, tripData.P4),
-                });
-            } else {
-                console.log("INCOMPLETE TRIP", tripData);
-            }
-        })
-        .catch((e) => {
-            console.error(e);
-            setTimeout(() => _handleDriveTripDate_P2(tripData), cfg.RETRY_TIMEOUT);
-        });
-}
-
-
-function _handleDriveTripDate_P3(tripData) {
-    drive.readParameter(DRIVE.GET_TRIP_DATE_P3)
-        .then(v => {
-            tripData.P3 = v.data;
-            if(tripData.P1 && tripData.P2 && tripData.P3 && tripData.P4){
-                handleSendWebsocket({
-                    command: WS.GET_DRIVE_TRIP_DATE,
-                    value: [].concat(tripData.P1, tripData.P2, tripData.P3, tripData.P4),
-                });
-            } else {
-                console.log("INCOMPLETE TRIP", tripData);
-            }
-        })
-        .catch((e) => {
-            console.error(e);
-            setTimeout(() => _handleDriveTripDate_P3(tripData), cfg.RETRY_TIMEOUT);
-        });
-}
-
-
-function _handleDriveTripDate_P4(tripData) {
-    drive.readParameter(DRIVE.GET_TRIP_DATE_P4)
-        .then(v => {
-            tripData.P4 = v.data;
-            if(tripData.P1 && tripData.P2 && tripData.P3 && tripData.P4){
-                handleSendWebsocket({
-                    command: WS.GET_DRIVE_TRIP_DATE,
-                    value: [].concat(tripData.P1, tripData.P2, tripData.P3, tripData.P4),
-                });
-            } else {
-                console.log("INCOMPLETE TRIP", tripData);
-            }
-        })
-        .catch((e) => {
-            console.error(e);
-            setTimeout(() => _handleDriveTripDate_P4(tripData), cfg.RETRY_TIMEOUT);
-        });
-}
-
-
-function handleDefaultSetCommand(parameter, wsCommand, value, callback = ()=>{}) {
-    drive.writeParameter({
-        ...parameter, value
+    let modbusErrList = deviceState.state.modbus_errorList || [];
+    modbusErrList.unshift(errorStats)
+    deviceState.update({ 
+        modbus_errorList: modbusErrList.slice(0,10)
     })
-        .then(() => {
-            handleSuccessCommand(wsCommand);
-            callback();
-        })
-        .catch(e => {
-            setTimeout(() => {handleDefaultSetCommand(parameter, wsCommand, value)}, cfg.RETRY_TIMEOUT);
-            handleErrorCommand(e);
+}
+
+
+
+// state-change callback to ws broadcast adapter
+function adapter_stateChange_ws(cmd) {
+    return (val) => {
+        console.log("STATE CHANGE: ", cmd)
+        ws_broadcast(cmd, val)
+    }
+}
+
+
+
+// state updater function
+function drivestateUpdateInterval(address, handles, interval){
+    setTimeout(() => {
+        drive.readParameter({
+            ...address,
+            callback: (err, success) => {
+                handles(err, success);
+                if(success) deviceState.update({ drive_modbusStatus: true });
+                if(err) {
+                    deviceState.update({ drive_modbusStatus: false });
+                    server_handleError(err);
+                }
+                drivestateUpdateInterval(address, handles, interval);
+            }
         });
+    }, interval);
 }
 
-
-function handleDefaultGetCommand(parameter, wsCommand) {
-    drive.readParameter(parameter)
-        .then((v) => {
-            handleSendWebsocket({
-                command: wsCommand,
-                value: v.data[0],
-            });
-        })
-        .catch(e => {
-            setTimeout(() => {handleDefaultGetCommand(parameter, wsCommand)}, cfg.RETRY_TIMEOUT);
-            handleErrorCommand(e);
+function plcStateUpdateInterval(address, handles, interval){
+    setTimeout(() => {
+        plc.read({
+            ...address,
+            callback: (err, success) => {
+                handles(err, success);
+                if(success) deviceState.update({ plc_modbusStatus: true });
+                if(err) {
+                    deviceState.update({ plc_modbusStatus: false });
+                    server_handleError(err);
+                }
+                plcStateUpdateInterval(address, handles, interval)
+            }
         });
-}
-
-
-function handleIntervalGetCommand(parameter, wsCommand) {
-    drive.readParameter(parameter)
-        .then((v) => {
-            handleSendWebsocket({
-                command: wsCommand,
-                value: v.data[0],
-            });
-            handleDriveStatus(true);
-        })
-        .catch(e => {
-            handleDriveStatus(false);
-        });
-}
-
-
-async function handleThreadFwdCommand() {
-    try {
-
-        var current = await drive.readParameter(DRIVE.THREAD_FORWARD);
-
-        await drive.writeParameter({...DRIVE.THREAD_REVERSE, value: 0})
-            .then(() => handleSendWebsocket({
-                command: WS.SET_THREAD_REVERSE,
-                value: 0,
-            }))
-            .catch(handleErrorCommand);
-
-        setTimeout(() => {
-            drive.writeParameter({...DRIVE.THREAD_FORWARD, value: (current.data[0]==1)?0:1})
-                .then(() => handleSendWebsocket({
-                    command: WS.SET_THREAD_FORWARD,
-                    value: (current.data[0] == 1) ? 0 : 1,
-                }))
-                .catch(handleErrorCommand);
-        }, 1000);
-
-    } catch(e) { handleErrorCommand(e) }
-
-}
-
-
-async function handleThreadRevCommand() {
-    
-    try {
-
-        var current = await drive.readParameter(DRIVE.THREAD_REVERSE);
-
-        drive.writeParameter({...DRIVE.THREAD_FORWARD, value: 0})
-            .then(() => handleSendWebsocket({
-                command: WS.SET_THREAD_FORWARD,
-                value: 0,
-            }))
-            .catch(handleErrorCommand);
-
-        setTimeout(() => {
-            drive.writeParameter({...DRIVE.THREAD_REVERSE, value: (current.data[0]==1)?0:1})
-                .then(() => handleSendWebsocket({
-                    command: WS.SET_THREAD_REVERSE,
-                    value: (current.data[0] == 1) ? 0 : 1,
-                }))
-                .catch(handleErrorCommand);
-        }, 1000);
-
-    } catch(e) { handleErrorCommand(e) }
-
-}
-
-const DRIVE = {
-    LENGTH: {menu:18, parameter:1},
-    SPEED: {menu:18, parameter:12},
-
-    COUNTER_PV: {menu:18, parameter:13},
-    COUNTER_CV: {menu:18, parameter:4},
-    COUNTER_RESET: {menu:19, parameter:50},
-
-    THREAD_FORWARD: {menu:18, parameter:31},
-    THREAD_REVERSE: {menu:18, parameter:32},
-
-    DISTANCE_MOTOR_TURN: {menu:18, parameter:51},
-    DISTANCE_ENCODER_TURN: {menu:18, parameter:52},
-    ACCELERATION_POSITION: {menu:18, parameter:53},
-    DECCELERATION_POSITION: {menu:18, parameter:54},
-    JOG_ACCELERATION: {menu:19, parameter:51},
-    JOG_DECCELERATION: {menu:19, parameter:52},
-    JOG_SPEED: {menu:19, parameter:53},
-
-    INIT_DASHBOARD: {menu:18, parameter:1, length:4},
-    UPDATE_DASHBOARD: {menu:18, parameter:3, length:2},
-    INIT_SETTING: {menu:18, parameter:5, length:7},
-
-    GET_TRIP_P1: {menu:10, parameter:20, length:5},
-    GET_TRIP_P2: {menu:10, parameter:25, length:5},
-    GET_TRIP_DATE_P1: {menu:10, parameter:41, length:5},
-    GET_TRIP_DATE_P2: {menu:10, parameter:46, length:5},
-    GET_TRIP_DATE_P3: {menu:10, parameter:51, length:5},
-    GET_TRIP_DATE_P4: {menu:10, parameter:56, length:5},
-    GET_SUBTRIP_P1: {menu:10, parameter:70, length:5},
-    GET_SUBTRIP_P2: {menu:10, parameter:75, length:5},
-}
-
-
-const WS = {
-
-    PLC_STATUS: 'PLC_Status',
-    PLC_RUN: 'PLC_Run',
-    DRIVE_STATUS: 'DRIVE_Status',
-    DRIVE_TRIP: 'DRIVE_Trip',
-
-    GET_PLC_DASHBOARD: 'PLC_Dashboard',
-    GET_DRIVE_DASHBOARD: 'Drive_Dashboard',
-    GET_DRIVE_DASHBOARD_UPDATE: 'Drive_Dashboard_Update',
-    GET_DRIVE_SETTING: 'Drive_Setting',
-
-    GET_DRIVE_TRIP: 'Get_Drive_Trip',
-    GET_DRIVE_SUBTRIP: 'Get_Drive_Subtrip',
-    GET_DRIVE_TRIP_DATE: 'Get_Drive_Trip_Date',
-
-    SET_LENGTH: "set_length",
-    SET_SPEED: "set_speed",
-    PRESET_COUNT: "preset_count",
-    RESET_COUNT: "reset_count",
-    SET_THREAD_FORWARD: "set_threadfwd",
-    SET_THREAD_REVERSE: "set_threadrev",
-    SET_MODE_SINGLE: "set_modesingle",
-    SET_MODE_MULTI: "set_modemulti",
-
-    SET_UNCOILER: "set-uncoiler",
-    SET_LEVELER: "set-leveler",
-    SET_RECOILER: "set-recoiler",
-    SET_FEEDER: "set-feeder",
-
-    GET_LENGTH: "get_length",
-    GET_SPEED: "get_speed",
-    GET_COUNT: "get_count",
-    GET_INDICATOR: "get_indicator",
-    GET_THREAD_FORWARD: "get_threadfwd",
-    GET_THREAD_REVERSE: "get_threadrev",
-    GET_MODE: "get_mode",
-
-    SET_DISTANCE_MOTOR_TURN: "set_distMotorTurn",
-    SET_DISTANCE_ENCODER_TURN: "set_distEncoderTurn",
-    SET_ACCELERATION_POSITION: "set_accelPos",
-    SET_DECCELERATION_POSITION: "set_deccelPos",
-    SET_JOG_ACCELERATION: "set_jogAccel",
-    SET_JOG_DECCELERATION: "set_jogDeccel",
-    SET_JOG_SPEED: "set_jogSpeed",
-
-    GET_DISTANCE_MOTOR_TURN: "get_distMotorTurn",
-    GET_DISTANCE_ENCODER_TURN: "get_distEncoderTurn",
-    GET_ACCELERATION_POSITION: "get_accelPos",
-    GET_DECCELERATION_POSITION: "get_deccelPos",
-    GET_JOG_ACCELERATION: "get_jogAccel",
-    GET_JOG_DECCELERATION: "get_jogDeccel",
-    GET_JOG_SPEED: "get_jogSpeed",
-
-    SAVE_PARAMETER: "save",
-    RESET_DRIVE: "reset",
-
-    GET_UNCOILER: 'Uncoiler',
-    GET_LEVELER: 'Leveller',
-    GET_RECOILER: 'Recoiler',
-    GET_FEEDER: 'Feeder',
-
-    COMM_SUCCESS: "com_success",
-    COMM_ERROR: "com_error",
+    }, interval);
 }

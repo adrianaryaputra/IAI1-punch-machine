@@ -15,151 +15,255 @@
 //     .then(console.log)
 //     .catch(console.error)
 
-module.exports = class PLC_FX3U{
+const { ModbusSlave } = require("../handler-modbus");
+
+module.exports = class PLC_FX3U extends ModbusSlave{
+
+
 
     constructor({
-        modbusClient,
+        modbusHandler,
         modbusId,
         modbusTimeout,
-    }){
-        this.id = modbusId;
-        this.timeout = modbusTimeout;
-        if(modbusClient) this.setClient(modbusClient);
+    }) { 
+        super({
+            modbusHandler,
+            modbusId,
+            modbusTimeout,
+        });
+
+        this.type = new Object({
+            M  : 'M',
+            S  : 'S',
+            TS : 'TS',
+            CS : 'CS',
+            Y  : 'Y',
+            D  : 'D',
+            R  : 'R',
+            TN : 'TN',
+            CN : 'CN',
+        })
+
+        this.address =  new Object({
+            M : { start: 0x0, end: 0x1FFF },
+            S : { start: 0x2000, end: 0x2FFF },
+            TS: { start: 0x3000, end: 0x31FF },
+            CS: { start: 0x3200, end: 0x32FF },
+            Y : { start: 0x3300, end: 0x33FF },
+            D : { start: 0x0, end: 0x213F },
+            R : { start: 0x2140, end: 0xA13F },
+            TN: { start: 0xA140, end: 0xA33F },
+            CN: { start: 0xA340, end: 0xA407 },
+        })
     }
 
-    setClient(client) {
-        this.modbusClient = client;
+
+
+    read({
+        type,
+        address,
+        length,
+        priority = 2,
+        callback = ()=>{}, 
+    }) {
+        switch(type) {
+            case this.type.M:
+                if( address >= 8000 && address <= 8511 ) 
+                    address - (8000 - 7680);
+            case this.type.S:
+            case this.type.TS:
+            case this.type.CS:
+            case this.type.Y:
+                if( 
+                    address >= 0x0 && 
+                    address <= (this.address[type].end - this.address[type].start)
+                ) {
+                    this._readBits({
+                        address,
+                        length,
+                        priority,
+                        callback,
+                    });
+                }
+                break;
+            case this.type.D:
+            case this.type.R:
+            case this.type.TN:
+            case this.type.CN:
+                if( 
+                    address >= 0x0 && 
+                    address <= (this.address[type].end - this.address[type].start)
+                ) {
+                    this._readBytes({
+                        address,
+                        length,
+                        priority,
+                        callback,
+                    });
+                }
+                break;
+        }
     }
 
-    configureID() {
-        this.modbusClient.setID(this.id);
-        this.modbusClient.setTimeout(this.timeout);
+
+
+    write({
+        type,
+        address,
+        value,
+        priority = 1,
+        callback = ()=>{},
+    }) {
+        switch(type) {
+            case this.type.M:
+                if( address >= 8000 && address <= 8511 ) 
+                    address - (8000 - 7680);
+            case this.type.S:
+            case this.type.TS:
+            case this.type.CS:
+            case this.type.Y:
+                if( 
+                    address >= 0x0 && 
+                    address <= (this.address[type].end - this.address[type].start)
+                ) {
+                    this._writeBit({
+                        address,
+                        value,
+                        priority,
+                        callback,
+                    });
+                }
+                break;
+            case this.type.D:
+            case this.type.R:
+            case this.type.TN:
+            case this.type.CN:
+                if( 
+                    address >= 0x0 && 
+                    address <= (this.address[type].end - this.address[type].start)
+                ) {
+                    this._writeByte({
+                        address,
+                        value,
+                        priority,
+                        callback,
+                    });
+                }
+                break;
+        }
     }
 
-    async read_M(number, length=1) {
-        this.configureID();
-        if(number>=0 && number<=8511)
-            return this.modbusClient.readCoils(number, length);
-        return
+
+
+    pulse({
+        type,
+        address,
+        priority = 1,
+        duration = 0,
+        callback = ()=>{}
+    }) {
+        switch(type) {
+            case this.type.M:
+            case this.type.S:
+            case this.type.TS:
+            case this.type.CS:
+            case this.type.Y:
+                this.write({
+                    type, address, value: true, priority,
+                    callback: (error, success) => {
+                        if(success) {
+                            setTimeout(() => {
+                                this.write({
+                                    type, address, value: false, priority,
+                                    callback
+                                });
+                            }, duration)
+                        }
+                        if(error)
+                            callback(error, success);
+                    }
+                });
+        }
     }
 
-    async write_M(number, bool) {
-        this.configureID();
-        if(number>=0 && number<=8511)
-            return this.modbusClient.writeCoil(number, bool);
-        return
+
+
+    _readBits({
+        address,
+        length,
+        priority = 2,
+        callback = ()=>{},
+    }) {
+        this.handler.send({
+            modbusSendCommand: this.command.readCoils,
+            modbusSendArgs: [
+                address, 
+                length*8 // length in byte
+            ],
+            modbusCallback: callback,
+            modbusId: this.id,
+            priority
+        })
     }
 
-    async read_S(number, length=1) {
-        this.configureID();
-        if(number>=0 && number<=4095)
-            return this.modbusClient.readCoils(number+0x2000, length);
-        return
+
+
+    _readBytes({
+        address,
+        length,
+        priority = 2,
+        callback = ()=>{}, 
+    }) {
+        this.handler.send({
+            modbusSendCommand: this.command.readHoldingRegisters,
+            modbusSendArgs: [
+                address, 
+                length
+            ],
+            modbusCallback: callback,
+            modbusId: this.id,
+            priority
+        })
     }
 
-    async write_S(number, bool) {
-        this.configureID();
-        if(number>=0 && number<=4095)
-            return this.modbusClient.writeCoil(number+0x2000, bool);
-        return
+
+
+    _writeBit({
+        address,
+        value,
+        priority = 1,
+        callback = ()=>{},
+    }) {
+        this.handler.send({
+            modbusSendCommand: this.command.writeCoil,
+            modbusSendArgs: [
+                address, 
+                value
+            ],
+            modbusCallback: callback,
+            modbusId: this.id,
+            priority
+        })
     }
 
-    async read_TS(number, length=1) {
-        this.configureID();
-        if(number>=0 && number<=511)
-            return this.modbusClient.readCoils(number+0x3000, length);
-        return
-    }
 
-    async write_TS(number, bool) {
-        this.configureID();
-        if(number>=0 && number<=511)
-            return this.modbusClient.writeCoil(number+0x3000, bool);
-        return
-    }
 
-    async read_CS(number, length=1) {
-        this.configureID();
-        if(number>=0 && number<=255)
-            return this.modbusClient.readCoils(number+0x3200, length);
-        return
-    }
-
-    async write_CS(number, bool) {
-        this.configureID();
-        if(number>=0 && number<=255)
-            return this.modbusClient.writeCoil(number+0x3200, bool);
-        return
-    }
-
-    async read_Y(number, length=1) {
-        this.configureID();
-        if(number>=0 && number<=377)
-            return this.modbusClient.readCoils(number+0x3300, length);
-        return
-    }
-
-    async write_Y(number, bool) {
-        this.configureID();
-        if(number>=0 && number<=377)
-            return this.modbusClient.writeCoil(number+0x3300, bool);
-        return
-    }
-
-    async read_D(number, length=1) {
-        this.configureID();
-        if(number>=0 && number<=8511)
-            return this.modbusClient.readHoldingRegisters(number, length);
-        return
-    }
-
-    async write_D(number, array) {
-        this.configureID();
-        if(number>=0 && number<=8511)
-            return this.modbusClient.writeRegisters(number, array);
-        return
-    }
-
-    async read_R(number, length=1) {
-        this.configureID();
-        if(number>=0 && number<=32767)
-            return this.modbusClient.readHoldingRegisters(number+0x2140, length);
-        return
-    }
-
-    async write_R(number, array) {
-        this.configureID();
-        if(number>=0 && number<=32767)
-            return this.modbusClient.writeRegisters(number+0x2140, array);
-        return
-    }
-
-    async read_TN(number, length=1) {
-        this.configureID();
-        if(number>=0 && number<=511)
-            return this.modbusClient.readHoldingRegisters(number+0xA140, length);
-        return
-    }
-
-    async write_TN(number, array) {
-        this.configureID();
-        if(number>=0 && number<=511)
-            return this.modbusClient.writeRegisters(number+0xA140, array);
-        return
-    }
-
-    async read_CN(number, length=1) {
-        this.configureID();
-        if(number>=0 && number<=255)
-            return this.modbusClient.readHoldingRegisters(number+0xA340, length);
-        return
-    }
-
-    async write_CN(number, array) {
-        this.configureID();
-        if(number>=0 && number<=255)
-            return this.modbusClient.writeRegisters(number+0xA340, array);
-        return
+    _writeByte({
+        address,
+        value,
+        priority = 1,
+        callback = ()=>{},
+    }) {
+        this.handler.send({
+            modbusSendCommand: this.command.writeRegister,
+            modbusSendArgs: [
+                address, 
+                value
+            ],
+            modbusCallback: callback,
+            modbusId: this.id,
+            priority
+        })
     }
 
 }

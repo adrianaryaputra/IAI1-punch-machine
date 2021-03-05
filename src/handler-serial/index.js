@@ -11,19 +11,19 @@ module.exports = class SerialHandler{
     constructor(settings = {}){
         this._SerialPort = SerialPort;
         this.settings = {
-            ...settings,
             autoOpen: false,
+            ...settings,
         };
         this.serialList = new Array();
     }
 
     filterByManufacturer(manufacturerName) {        
-        this.serialList = this.serialList.filter((serial) => {return serial.manufacturer == manufacturerName});
+        this.serialList = this.serialList.filter(serial => serial.manufacturer == manufacturerName);
         return this;
     }
 
     filterByPnpId(pnpId) {
-        this.serialList = this.serialList.filter((serial) => {return serial.pnpId == pnpId});
+        this.serialList = this.serialList.filter(serial => serial.pnpId == pnpId);
         return this;
     }
 

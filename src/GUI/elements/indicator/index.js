@@ -14,6 +14,7 @@ export class Indicator{
         for (const key in style) {
             this.elem.style[key] = style[key];
         }
+        this.elem.style.boxShadow = 'inset 0 0 2rem 0 #000A'
 
         this.colorTrue = colorTrue;
         this.colorFalse = colorFalse;

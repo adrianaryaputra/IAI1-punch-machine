@@ -6,3 +6,6 @@ sudo reboot
 
 # desktop
 cp ./kiosk.desktop ~/.config/autostart/kiosk.desktop
+
+# ip address setup at
+/etc/dhcpcd.conf
