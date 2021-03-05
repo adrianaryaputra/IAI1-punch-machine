@@ -67,6 +67,7 @@ async function runModbus() {
                 console.log("modbus port open");
             });
         }
+        else throw Error(`there are ${serialList.length} serial selected, it should be 1.`)
     } catch(e) {
         server_handleError(e);
         setTimeout(() => runModbus(), 5000); 
