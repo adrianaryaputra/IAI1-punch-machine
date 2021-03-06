@@ -428,15 +428,15 @@ function generateGUI() {
     pubsub.subscribe(WS.DRIVE_GET_TRIP_FLAG, (msg) => buttonTrip.warn(!msg));
 
     pubsub.subscribe(WS.PLC_GET_STATE_Y, (y) => {
-        buttonUncoiler.active(y[0]?1:0);
+        buttonUncoiler.active(y[0]);
         buttonUncoiler.enable(true);
-        buttonLeveler.active(y[1]?1:0);
+        buttonLeveler.active(y[1]);
         buttonLeveler.enable(true);
-        buttonRecoiler.active(y[2]?1:0);
+        buttonRecoiler.active(y[2]);
         buttonRecoiler.enable(true);
-        buttonFeeder.active(y[3]?1:0);
+        buttonFeeder.active(y[3]);
         buttonFeeder.enable(true);
-        buttonFeederPressure.active(y[6]?1:0);
+        buttonFeederPressure.active(y[6]);
         buttonFeederPressure.enable(true);
     })
 }

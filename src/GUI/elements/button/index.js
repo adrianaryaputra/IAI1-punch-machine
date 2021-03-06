@@ -37,7 +37,7 @@ export class ClickableButton{
     }
 
     active(cond) {
-        if(cond == 1){
+        if(cond){
             this.elem.style.backgroundColor = "#0F0";
             this.currentColor = "#0F0";
         } else {
@@ -48,7 +48,7 @@ export class ClickableButton{
     }
 
     warn(cond) {
-        if(cond == 1){
+        if(cond){
             this.warnInterval = setInterval(() => {
                 this.elem.style.backgroundColor = "#FF0";
                 this.currentColor = "#FF0";
