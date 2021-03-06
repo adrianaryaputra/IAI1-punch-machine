@@ -424,7 +424,7 @@ function generateGUI() {
     pubsub.subscribe(WS.PLC_GET_MODBUS_STATS, (msg) => indicatorPLC.set(msg));
     pubsub.subscribe(WS.DRIVE_GET_MODBUS_STATS, (msg) => indicatorDrive.set(msg));
     
-    pubsub.subscribe(WS.PLC_GET_TRIP_FLAG, (msg) => buttonTrip.warn(msg));
+    pubsub.subscribe(WS.PLC_GET_TRIP_FLAG, (msg) => buttonTrip.warn(!msg));
     pubsub.subscribe(WS.DRIVE_GET_TRIP_FLAG, (msg) => buttonTrip.warn(!msg));
 
     pubsub.subscribe(WS.PLC_GET_STATE_Y, (y) => {
