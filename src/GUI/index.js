@@ -428,16 +428,16 @@ function generateGUI() {
     pubsub.subscribe(WS.DRIVE_GET_TRIP_FLAG, (msg) => buttonTrip.warn(!msg));
 
     pubsub.subscribe(WS.PLC_GET_STATE_Y, (y) => {
-        buttonUncoiler.active(y[0]);
         buttonUncoiler.enable(true);
-        buttonLeveler.active(y[1]);
+        buttonUncoiler.active(y[0]);
         buttonLeveler.enable(true);
-        buttonRecoiler.active(y[2]);
+        buttonLeveler.active(y[1]);
         buttonRecoiler.enable(true);
-        buttonFeeder.active(y[3]);
+        buttonRecoiler.active(y[2]);
         buttonFeeder.enable(true);
-        buttonFeederPressure.active(y[6]);
+        buttonFeeder.active(y[3]);
         buttonFeederPressure.enable(true);
+        buttonFeederPressure.active(y[6]);
     })
 }
 
