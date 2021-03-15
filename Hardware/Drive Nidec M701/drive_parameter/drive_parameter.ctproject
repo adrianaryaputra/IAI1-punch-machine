@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Virgo.Project Version="1" Guid="2cc8108e-6f42-4f81-b4e3-34626113ff71" Creation="2021-03-06T15:59:36.6543786+07:00">
+  <Notes></Notes>
+  <Description></Description>
+  <Author>62812</Author>
+  <Location></Location>
+  <MetaData />
+  <Devices current="535a3f97-4a67-4161-859e-d3536a5df3b3">
+    <Device Id="535a3f97-4a67-4161-859e-d3536a5df3b3" Type="Unidrive M701" Name="Feeder Drive" Location="Feeder Drive" />
+  </Devices>
+</Virgo.Project>
