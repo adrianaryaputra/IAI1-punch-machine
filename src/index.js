@@ -289,7 +289,7 @@ function server_handleError(err) {
         error: err.message,
         timestamp: Date.now(),
     };
-    if(err.message == 'Port Not Open' && modbusHandler.isOpen){
+    if(err.message == 'Port Not Open'){
         // terminate all modbus device online state.
         deviceState.update({ drive_modbusStatus: false });
         deviceState.update({ plc_modbusStatus: false });
