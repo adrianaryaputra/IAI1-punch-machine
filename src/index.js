@@ -289,11 +289,14 @@ function server_handleError(err) {
         error: err.message,
         timestamp: Date.now(),
     };
-    if(err.message == 'Port Not Open'){
+    if(err.message == 'Port Not Open') {
         // terminate all modbus device online state.
         deviceState.update({ drive_modbusStatus: false });
         deviceState.update({ plc_modbusStatus: false });
-        // close connection, then try to reconnect.
+    }
+    if(!(deviceState.state.drive_modbusStatus || 
+         deviceState.state.plc_modbusStatus)) {
+        // close connection and reconnect
         modbusHandler.close();
         runModbus();
     }
