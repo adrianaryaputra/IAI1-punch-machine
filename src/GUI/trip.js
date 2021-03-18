@@ -72,11 +72,11 @@ function generateGUI() {
         style: indicatorStyle,
     });
 
-    let okPLC = new Indicator({
-        parent: holderTripIndicator.element(),
-        text: "PLC: Stop",
-        style: indicatorStyle,
-    });
+    // let okPLC = new Indicator({
+    //     parent: holderTripIndicator.element(),
+    //     text: "PLC: Stop",
+    //     style: indicatorStyle,
+    // });
 
 
 
@@ -91,16 +91,16 @@ function generateGUI() {
     });
     
     let indicatorDrive = new Indicator({
-        parent: holderModbusStatus.element(),
+        parent: holderTripIndicator.element(),
         text: "Drive-HMI Connection",
         style: indicatorStyle,
     });
 
-    let indicatorPLC = new Indicator({
-        parent: holderModbusStatus.element(),
-        text: "PLC-HMI Connection",
-        style: indicatorStyle,
-    });
+    // let indicatorPLC = new Indicator({
+    //     parent: holderModbusStatus.element(),
+    //     text: "PLC-HMI Connection",
+    //     style: indicatorStyle,
+    // });
 
     
 
@@ -166,10 +166,10 @@ function generateGUI() {
         );
     })
 
-    pubsub.subscribe(WS.PLC_GET_MODBUS_STATS, (msg) => indicatorPLC.set(msg));
+    // pubsub.subscribe(WS.PLC_GET_MODBUS_STATS, (msg) => indicatorPLC.set(msg));
     pubsub.subscribe(WS.DRIVE_GET_MODBUS_STATS, (msg) => indicatorDrive.set(msg));
     pubsub.subscribe(WS.DRIVE_GET_TRIP_FLAG, (msg) => okDrive.set(msg, "Drive: OK"));
-    pubsub.subscribe(WS.PLC_GET_TRIP_FLAG, (msg) => okPLC.set(msg, "PLC: OK"));
+    // pubsub.subscribe(WS.PLC_GET_TRIP_FLAG, (msg) => okPLC.set(msg, "PLC: OK"));
 }
 
 document.addEventListener("DOMContentLoaded", () => {

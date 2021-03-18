@@ -159,7 +159,7 @@ function generateGUI() {
         style: {
             padding: "1em 0 0 0",
             display: "grid",
-            gridTemplateColumns: "repeat(2, minmax(3rem, 1fr))",
+            gridTemplateColumns: "repeat(1, minmax(3rem, 1fr))",
             gap: "1em",
         }
     });
@@ -169,7 +169,7 @@ function generateGUI() {
         style: {
             padding: "1rem 0 0 0",
             display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(3rem, 1fr))",
+            gridTemplateColumns: "repeat(2, minmax(3rem, 1fr))",
             gap: "1em",
         }
     });
@@ -188,11 +188,11 @@ function generateGUI() {
         style: indicatorStyle,
     });
 
-    let indicatorPLC = new Indicator({
-        parent: holderModbusStatus.element(),
-        text: "PLC-HMI Connection",
-        style: indicatorStyle,
-    });
+    // let indicatorPLC = new Indicator({
+    //     parent: holderModbusStatus.element(),
+    //     text: "PLC-HMI Connection",
+    //     style: indicatorStyle,
+    // });
 
     let holderControl = new Holder({
         parent: document.body,
@@ -208,61 +208,61 @@ function generateGUI() {
     textControl.style.textAlign = "center";
     holderControl.element().appendChild(textControl);
 
-    let holderContactor = new Holder({
-        parent: holderControl.element(),
-        style: {
-            padding: "1em 0 0 0",
-            display: "grid",
-            width: "100%",
-            gridTemplateColumns: "repeat(4, minmax(3rem, 1fr))",
-            gap: "1em",
-            justifyContent: "center",
-        }
-    });
+    // let holderContactor = new Holder({
+    //     parent: holderControl.element(),
+    //     style: {
+    //         padding: "1em 0 0 0",
+    //         display: "grid",
+    //         width: "100%",
+    //         gridTemplateColumns: "repeat(4, minmax(3rem, 1fr))",
+    //         gap: "1em",
+    //         justifyContent: "center",
+    //     }
+    // });
 
-    let buttonUncoiler = new ClickableButton({
-        parent: holderContactor.element(),
-        text: "Uncoiler",
-        color: "#F00",
-        style: buttonStyle,
-        callback: () => {
-            buttonUncoiler.enable(false);
-            ws_send(WS.PLC_SET_ENABLE_UNCOILER, true)
-        }
-    });
+    // let buttonUncoiler = new ClickableButton({
+    //     parent: holderContactor.element(),
+    //     text: "Uncoiler",
+    //     color: "#F00",
+    //     style: buttonStyle,
+    //     callback: () => {
+    //         buttonUncoiler.enable(false);
+    //         ws_send(WS.PLC_SET_ENABLE_UNCOILER, true)
+    //     }
+    // });
 
-    let buttonLeveler = new ClickableButton({
-        parent: holderContactor.element(),
-        text: "Leveler",
-        color: "#F00",
-        style: buttonStyle,
-        callback: () => {
-            buttonLeveler.enable(false);
-            ws_send(WS.PLC_SET_ENABLE_LEVELER, true)
-        }
-    });
+    // let buttonLeveler = new ClickableButton({
+    //     parent: holderContactor.element(),
+    //     text: "Leveler",
+    //     color: "#F00",
+    //     style: buttonStyle,
+    //     callback: () => {
+    //         buttonLeveler.enable(false);
+    //         ws_send(WS.PLC_SET_ENABLE_LEVELER, true)
+    //     }
+    // });
 
-    let buttonFeeder = new ClickableButton({
-        parent: holderContactor.element(),
-        text: "Feeder",
-        color: "#F00",
-        style: buttonStyle,
-        callback: () => {
-            buttonFeeder.enable(false);
-            ws_send(WS.PLC_SET_ENABLE_FEEDER, true)
-        }
-    });
+    // let buttonFeeder = new ClickableButton({
+    //     parent: holderContactor.element(),
+    //     text: "Feeder",
+    //     color: "#F00",
+    //     style: buttonStyle,
+    //     callback: () => {
+    //         buttonFeeder.enable(false);
+    //         ws_send(WS.PLC_SET_ENABLE_FEEDER, true)
+    //     }
+    // });
 
-    let buttonRecoiler = new ClickableButton({
-        parent: holderContactor.element(),
-        text: "Recoiler",
-        color: "#F00",
-        style: buttonStyle,
-        callback: () => {
-            buttonRecoiler.enable(false);
-            ws_send(WS.PLC_SET_ENABLE_RECOILER, true)
-        }
-    });
+    // let buttonRecoiler = new ClickableButton({
+    //     parent: holderContactor.element(),
+    //     text: "Recoiler",
+    //     color: "#F00",
+    //     style: buttonStyle,
+    //     callback: () => {
+    //         buttonRecoiler.enable(false);
+    //         ws_send(WS.PLC_SET_ENABLE_RECOILER, true)
+    //     }
+    // });
     
     let holderThread = new Holder({
         parent: holderControl.element(),
@@ -270,7 +270,7 @@ function generateGUI() {
             padding: "1em 0 0 0",
             display: "grid",
             width: "100%",
-            gridTemplateColumns: "repeat(4, minmax(3rem, 1fr))",
+            gridTemplateColumns: "repeat(2, minmax(3rem, 1fr))",
             gap: "1em",
             justifyContent: "center",
         }
@@ -294,30 +294,30 @@ function generateGUI() {
         }
     });
 
-    let buttonFeederPressure = new ClickableButton({
-        parent: holderThread.element(),
-        text: "Feed Roll Clamp",
-        color: "#F00",
-        style: {
-            ...buttonStyle,
-            // gridColumn: "2 / span 2"
-        },
-        callback: () => {
-            buttonFeederPressure.enable(false);
-            ws_send(WS.PLC_SET_ENABLE_FEEDCLAMP, true);
-        }
-    });
+    // let buttonFeederPressure = new ClickableButton({
+    //     parent: holderThread.element(),
+    //     text: "Feed Roll Clamp",
+    //     color: "#F00",
+    //     style: {
+    //         ...buttonStyle,
+    //         // gridColumn: "2 / span 2"
+    //     },
+    //     callback: () => {
+    //         buttonFeederPressure.enable(false);
+    //         ws_send(WS.PLC_SET_ENABLE_FEEDCLAMP, true);
+    //     }
+    // });
 
-    let buttonPunch1x = new ClickableButton({
-        parent: holderThread.element(),
-        text: "Punch 1x",
-        style: {
-            ...buttonStyle,
-        },
-        callback: () => {
-            ws_send(WS.PLC_SET_ENABLE_PUNCH1X, true);
-        }
-    });
+    // let buttonPunch1x = new ClickableButton({
+    //     parent: holderThread.element(),
+    //     text: "Punch 1x",
+    //     style: {
+    //         ...buttonStyle,
+    //     },
+    //     callback: () => {
+    //         ws_send(WS.PLC_SET_ENABLE_PUNCH1X, true);
+    //     }
+    // });
 
     let holderCommand = new Holder({
         parent: holderControl.element(),
@@ -421,24 +421,24 @@ function generateGUI() {
     pubsub.subscribe(WS.DRIVE_SET_THREAD_FORWARD, (msg) => buttonThreadFwd.active(msg));
     pubsub.subscribe(WS.DRIVE_SET_THREAD_REVERSE, (msg) => buttonThreadRev.active(msg));
 
-    pubsub.subscribe(WS.PLC_GET_MODBUS_STATS, (msg) => indicatorPLC.set(msg));
+    // pubsub.subscribe(WS.PLC_GET_MODBUS_STATS, (msg) => indicatorPLC.set(msg));
     pubsub.subscribe(WS.DRIVE_GET_MODBUS_STATS, (msg) => indicatorDrive.set(msg));
     
-    pubsub.subscribe(WS.PLC_GET_TRIP_FLAG, (msg) => buttonTrip.warn(!msg));
+    // pubsub.subscribe(WS.PLC_GET_TRIP_FLAG, (msg) => buttonTrip.warn(!msg));
     pubsub.subscribe(WS.DRIVE_GET_TRIP_FLAG, (msg) => buttonTrip.warn(!msg));
 
-    pubsub.subscribe(WS.PLC_GET_STATE_Y, (y) => {
-        buttonUncoiler.enable(true);
-        buttonUncoiler.active(y[0]);
-        buttonLeveler.enable(true);
-        buttonLeveler.active(y[1]);
-        buttonRecoiler.enable(true);
-        buttonRecoiler.active(y[2]);
-        buttonFeeder.enable(true);
-        buttonFeeder.active(y[3]);
-        buttonFeederPressure.enable(true);
-        buttonFeederPressure.active(y[6]);
-    })
+    // pubsub.subscribe(WS.PLC_GET_STATE_Y, (y) => {
+    //     buttonUncoiler.enable(true);
+    //     buttonUncoiler.active(y[0]);
+    //     buttonLeveler.enable(true);
+    //     buttonLeveler.active(y[1]);
+    //     buttonRecoiler.enable(true);
+    //     buttonRecoiler.active(y[2]);
+    //     buttonFeeder.enable(true);
+    //     buttonFeeder.active(y[3]);
+    //     buttonFeederPressure.enable(true);
+    //     buttonFeederPressure.active(y[6]);
+    // })
 }
 
 

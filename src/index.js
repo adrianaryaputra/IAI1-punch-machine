@@ -4,7 +4,7 @@ const cfg = require('./config.json');
 // serial communication import
 const { ModbusHandler, SerialPort } = require('com-modbus');
 const { ModbusDevice_Nidec_M701 }   = require('modbus-nidec-m701');
-const { ModbusDevice_FX3U }         = require('modbus-mitsubishi-fx3u');
+// const { ModbusDevice_FX3U }         = require('modbus-mitsubishi-fx3u');
 
 // state observer
 const DataState = require('observable-state');
@@ -36,11 +36,11 @@ let drive = new ModbusDevice_Nidec_M701({
     modbusTimeout: cfg.MODBUS_TIMEOUT,
 });
 
-let plc = new ModbusDevice_FX3U({
-    modbusHandler: modbusHandler,
-    modbusId: 2,
-    modbusTimeout: cfg.MODBUS_TIMEOUT,
-});
+// let plc = new ModbusDevice_FX3U({
+//     modbusHandler: modbusHandler,
+//     modbusId: 2,
+//     modbusTimeout: cfg.MODBUS_TIMEOUT,
+// });
 
 
 
@@ -167,25 +167,25 @@ function ws_handleIncoming(client, command, value) {
                 });
                 break;
             
-            case WSCMD.PLC_SET_ENABLE_UNCOILER  :
-            case WSCMD.PLC_SET_ENABLE_LEVELER   :
-            case WSCMD.PLC_SET_ENABLE_RECOILER  :
-            case WSCMD.PLC_SET_ENABLE_FEEDER    :
-            case WSCMD.PLC_SET_ENABLE_FEEDCLAMP :
-            case WSCMD.PLC_SET_ENABLE_PUNCH1X   :
-                plc.pulse({
-                    ...ADDRESS[command],
-                    callback: (e,s) => {
-                        if(s!==null) {
-                            console.log("OLD", deviceState.state.plc_state_y);
-                            console.log("NEW", MAP_WS_STATE[command](deviceState.state.plc_state_y));
-                            deviceState.update({
-                                ...MAP_WS_STATE[command](deviceState.state.plc_state_y)
-                            });
-                        }
-                    }
-                });
-                break;
+            // case WSCMD.PLC_SET_ENABLE_UNCOILER  :
+            // case WSCMD.PLC_SET_ENABLE_LEVELER   :
+            // case WSCMD.PLC_SET_ENABLE_RECOILER  :
+            // case WSCMD.PLC_SET_ENABLE_FEEDER    :
+            // case WSCMD.PLC_SET_ENABLE_FEEDCLAMP :
+            // case WSCMD.PLC_SET_ENABLE_PUNCH1X   :
+            //     plc.pulse({
+            //         ...ADDRESS[command],
+            //         callback: (e,s) => {
+            //             if(s!==null) {
+            //                 console.log("OLD", deviceState.state.plc_state_y);
+            //                 console.log("NEW", MAP_WS_STATE[command](deviceState.state.plc_state_y));
+            //                 deviceState.update({
+            //                     ...MAP_WS_STATE[command](deviceState.state.plc_state_y)
+            //                 });
+            //             }
+            //         }
+            //     });
+            //     break;
         }
     } catch(e) {
         server_handleError(e);
@@ -258,27 +258,27 @@ function runUpdater() {
     )
 
     // update plc Y state
-    plcStateUpdateInterval(
-        ADDRESS.PLC_GET_STATE_Y,
-        (err, success) => {
-            if(success) deviceState.update({
-                plc_state_y : success,
-                plc_tripStatus  : success[12],
-            });
-        },
-        cfg.STATE_UPDATE_INTERVAL_PRIMARY
-    )
+    // plcStateUpdateInterval(
+    //     ADDRESS.PLC_GET_STATE_Y,
+    //     (err, success) => {
+    //         if(success) deviceState.update({
+    //             plc_state_y : success,
+    //             plc_tripStatus  : success[12],
+    //         });
+    //     },
+    //     cfg.STATE_UPDATE_INTERVAL_PRIMARY
+    // )
 
     // update plc X state
-    plcStateUpdateInterval(
-        ADDRESS.PLC_GET_STATE_X,
-        (err, success) => {
-            if(success) deviceState.update({
-                plc_state_x     : success,
-            });
-        },
-        cfg.STATE_UPDATE_INTERVAL_SECONDARY
-    )
+    // plcStateUpdateInterval(
+    //     ADDRESS.PLC_GET_STATE_X,
+    //     (err, success) => {
+    //         if(success) deviceState.update({
+    //             plc_state_x     : success,
+    //         });
+    //     },
+    //     cfg.STATE_UPDATE_INTERVAL_SECONDARY
+    // )
 }
 
 
@@ -334,22 +334,22 @@ function drivestateUpdateInterval(address, handles, interval){
     }, interval);
 }
 
-function plcStateUpdateInterval(address, handles, interval){
-    setTimeout(() => {
-        plc.read({
-            ...address,
-            callback: (err, success) => {
-                handles(err, success);
-                if(success) deviceState.update({ plc_modbusStatus: true });
-                if(err) {
-                    deviceState.update({ plc_modbusStatus: false });
-                    server_handleError(err);
-                }
-                plcStateUpdateInterval(address, handles, interval)
-            }
-        });
-    }, interval);
-}
+// function plcStateUpdateInterval(address, handles, interval){
+//     setTimeout(() => {
+//         plc.read({
+//             ...address,
+//             callback: (err, success) => {
+//                 handles(err, success);
+//                 if(success) deviceState.update({ plc_modbusStatus: true });
+//                 if(err) {
+//                     deviceState.update({ plc_modbusStatus: false });
+//                     server_handleError(err);
+//                 }
+//                 plcStateUpdateInterval(address, handles, interval)
+//             }
+//         });
+//     }, interval);
+// }
 
 
 
@@ -379,17 +379,17 @@ const MAP_WS_STATE = {
     DRIVE_GET_TRIP_DATE              : (val) => ({drive_tripDate: val}),            
     DRIVE_GET_MODBUS_STATS           : (val) => ({drive_modbusStatus: val}),
     
-    PLC_SET_ENABLE_UNCOILER          : (y) => {y[0]=!y[0]; return({plc_state_y: y})},
-    PLC_SET_ENABLE_LEVELER           : (y) => {y[1]=!y[1]; return({plc_state_y: y})},
-    PLC_SET_ENABLE_RECOILER          : (y) => {y[2]=!y[2]; return({plc_state_y: y})},
-    PLC_SET_ENABLE_FEEDER            : (y) => {y[3]=!y[3]; return({plc_state_y: y})},
-    PLC_SET_ENABLE_FEEDCLAMP         : (y) => {y[6]=!y[6]; return({plc_state_y: y})},
-    PLC_SET_ENABLE_PUNCH1X           : (y) => {y[4]=!y[4]; return({plc_state_y: y})},
+    // PLC_SET_ENABLE_UNCOILER          : (y) => {y[0]=!y[0]; return({plc_state_y: y})},
+    // PLC_SET_ENABLE_LEVELER           : (y) => {y[1]=!y[1]; return({plc_state_y: y})},
+    // PLC_SET_ENABLE_RECOILER          : (y) => {y[2]=!y[2]; return({plc_state_y: y})},
+    // PLC_SET_ENABLE_FEEDER            : (y) => {y[3]=!y[3]; return({plc_state_y: y})},
+    // PLC_SET_ENABLE_FEEDCLAMP         : (y) => {y[6]=!y[6]; return({plc_state_y: y})},
+    // PLC_SET_ENABLE_PUNCH1X           : (y) => {y[4]=!y[4]; return({plc_state_y: y})},
 
-    PLC_GET_STATE_X                  : (val) => ({plc_state_x: val}),
-    PLC_GET_STATE_Y                  : (val) => ({plc_state_y: val}),
-    PLC_GET_TRIP_FLAG                : (val) => ({plc_tripStatus: val}),
-    PLC_GET_MODBUS_STATS             : (val) => ({plc_modbusStatus: val}),
+    // PLC_GET_STATE_X                  : (val) => ({plc_state_x: val}),
+    // PLC_GET_STATE_Y                  : (val) => ({plc_state_y: val}),
+    // PLC_GET_TRIP_FLAG                : (val) => ({plc_tripStatus: val}),
+    // PLC_GET_MODBUS_STATS             : (val) => ({plc_modbusStatus: val}),
 
     MODBUS_ERROR_LIST                : (val) => ({modbus_errorList: val}),
 }
@@ -417,10 +417,10 @@ let deviceState = new DataState({
     drive_tripDate              : adapter_stateChange_ws(WSCMD.DRIVE_GET_TRIP_DATE),
     drive_modbusStatus          : adapter_stateChange_ws(WSCMD.DRIVE_GET_MODBUS_STATS),
 
-    plc_state_x                 : adapter_stateChange_ws(WSCMD.PLC_GET_STATE_X),
-    plc_state_y                 : adapter_stateChange_ws(WSCMD.PLC_GET_STATE_Y),
-    plc_tripStatus              : adapter_stateChange_ws(WSCMD.PLC_GET_TRIP_FLAG),
-    plc_modbusStatus            : adapter_stateChange_ws(WSCMD.PLC_GET_MODBUS_STATS),
+    // plc_state_x                 : adapter_stateChange_ws(WSCMD.PLC_GET_STATE_X),
+    // plc_state_y                 : adapter_stateChange_ws(WSCMD.PLC_GET_STATE_Y),
+    // plc_tripStatus              : adapter_stateChange_ws(WSCMD.PLC_GET_TRIP_FLAG),
+    // plc_modbusStatus            : adapter_stateChange_ws(WSCMD.PLC_GET_MODBUS_STATS),
 
     modbus_errorList            : adapter_stateChange_ws(WSCMD.MODBUS_ERROR_LIST),
 });
@@ -449,13 +449,13 @@ const ADDRESS = {
     DRIVE_GET_TRIP_DATE                 : {menu:10, parameter:41, length:20},
     DRIVE_GET_SUBTRIP                   : {menu:10, parameter:70, length:10},
 
-    PLC_SET_ENABLE_UNCOILER             : {type:plc.type.M, address:16},
-    PLC_SET_ENABLE_LEVELER              : {type:plc.type.M, address:17},
-    PLC_SET_ENABLE_RECOILER             : {type:plc.type.M, address:18},
-    PLC_SET_ENABLE_FEEDER               : {type:plc.type.M, address:19},
-    PLC_SET_ENABLE_FEEDCLAMP            : {type:plc.type.M, address:33},
-    PLC_SET_ENABLE_PUNCH1X              : {type:plc.type.M, address:34},
+    // PLC_SET_ENABLE_UNCOILER             : {type:plc.type.M, address:16},
+    // PLC_SET_ENABLE_LEVELER              : {type:plc.type.M, address:17},
+    // PLC_SET_ENABLE_RECOILER             : {type:plc.type.M, address:18},
+    // PLC_SET_ENABLE_FEEDER               : {type:plc.type.M, address:19},
+    // PLC_SET_ENABLE_FEEDCLAMP            : {type:plc.type.M, address:33},
+    // PLC_SET_ENABLE_PUNCH1X              : {type:plc.type.M, address:34},
 
-    PLC_GET_STATE_X                     : {type:plc.type.M, address:0, length:1},
-    PLC_GET_STATE_Y                     : {type:plc.type.M, address:20, length:2},
+    // PLC_GET_STATE_X                     : {type:plc.type.M, address:0, length:1},
+    // PLC_GET_STATE_Y                     : {type:plc.type.M, address:20, length:2},
 }
