@@ -9,3 +9,7 @@ cp ./kiosk.desktop ~/.config/autostart/kiosk.desktop
 
 # ip address setup at
 /etc/dhcpcd.conf
+
+# disable mouse at
+/etc/lightdm/lightdm.conf
+xserver-command=X -s 0 dpms -nocursor
