@@ -293,9 +293,6 @@ function server_handleError(err) {
         // terminate all modbus device online state.
         deviceState.update({ drive_modbusStatus: false });
         deviceState.update({ plc_modbusStatus: false });
-    }
-    if(!(deviceState.state.drive_modbusStatus || 
-         deviceState.state.plc_modbusStatus)) {
         // close connection and reconnect
         modbusHandler.close();
         runModbus();
