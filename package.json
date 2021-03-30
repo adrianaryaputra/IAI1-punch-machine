@@ -15,6 +15,7 @@
     "modbus-mitsubishi-fx3u": "git://github.com/adrianaryaputra/modbus-mitsubishi-fx3u.git",
     "modbus-nidec-m701": "git://github.com/adrianaryaputra/modbus-nidec-m701.git",
     "modbus-serial": "^8.0.1",
+    "mqtt": "^4.2.6",
     "observable-state": "git+https://github.com/adrianaryaputra/observable-state.git",
     "serialport": "^9.0.7",
     "ws": "^7.4.3"
