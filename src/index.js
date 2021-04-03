@@ -70,9 +70,6 @@ async function runModbus() {
         if(serialList.length == 1) {
             let modbusPort = new SerialPort(serialList[0].path, {autoOpen: false, baudRate: cfg.MODBUS_BAUD, stopBits: cfg.MODBUS_STOPBIT});
             modbusHandler.setConnection(modbusPort).open(() => {
-                if(typeof stateUpdaterInterval == 'object') {
-                    for (const key in stateUpdaterInterval) clearInterval(stateUpdaterInterval);
-                }
                 console.log("modbus port open");
             });
         }
@@ -124,6 +121,10 @@ function ws_handleIncoming(client, command, value) {
                         drive_tripCode: drive.tripCode,
                     }
                 }))
+                break;
+            
+            case "REBOOT":
+                handleRestart();
                 break;
 
             case CMD.DRIVE_LENGTH                 :
@@ -248,9 +249,6 @@ function runUpdater() {
         ADDRESS.DRIVE_INDICATOR,
         (err, success) => {
             if(success) {
-                // send mq diff
-                const punchDiff = success[3] - deviceState.get().drive_punchCountDisplay;
-                if(punchDiff>0) mq_publish("DB_PUNCH_DIFF", punchDiff);
                 // update state
                 deviceState.update({
                     drive_feedLength            : success[0],
@@ -327,7 +325,6 @@ function runUpdater() {
 
 
 // send error data to web interface
-let failRetryCount = 0;
 function server_handleError(err) {
     let errorStats = {
         error: err.message,
@@ -348,12 +345,12 @@ function server_handleError(err) {
     deviceState.update({ 
         modbus_errorList: modbusErrList
     });
+}
 
-    if(!deviceState.state.drive_modbusStatus && !deviceState.state.plc_modbusStatus) {
-        failRetryCount += 1;
-    } else { failRetryCount = 0 }
 
-    if(failRetryCount > 300) exec("reboot");
+
+function handleRestart() {
+    exec("reboot");
 }
 
 

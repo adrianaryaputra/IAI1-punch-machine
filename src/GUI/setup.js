@@ -214,6 +214,16 @@ function generateGUI() {
         }
     });
 
+    let btnReboot = new ClickableButton({
+        parent: holderForm.element(),
+        text: "RESTART HMI",
+        style: buttonStyle,
+        color: "#F00",
+        callback: () => {
+            ws_send("REBOOT", true);
+        }
+    });
+
     // keyboard
     document.body.style.marginBottom = "5em";
     const inputList = document.querySelectorAll("input[type=text]");
