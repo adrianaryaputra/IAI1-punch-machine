@@ -338,7 +338,8 @@ function server_handleError(err) {
         modbusHandler.close();
         runModbus();
     }
-    let modbusErrList = deviceState.state.modbus_errorList?.slice(0,9) ?? [];
+    let modbusError = deviceState.state.modbus_errorList || []
+    let modbusErrList = modbusError.slice(0,9);
     modbusErrList.unshift(errorStats);
     deviceState.update({ 
         modbus_errorList: modbusErrList

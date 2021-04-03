@@ -15,7 +15,7 @@
     "STATE_UPDATE_INTERVAL_PRIMARY": 2000,
     "STATE_UPDATE_INTERVAL_SECONDARY": 10000,
 
-    "MQTT_BROKER": "mqtt://localhost:5001",
+    "MQTT_BROKER": "mqtt://192.168.3.200:5001",
 
     "COMMAND": {
         "DRIVE_LENGTH"                    : "DRIVE_LENGTH",
