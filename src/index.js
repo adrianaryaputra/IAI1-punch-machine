@@ -1,3 +1,5 @@
+const exec = require('child_process').exec;
+
 // configuration import
 const cfg = require('./config.json');
 const deviceName = require('os').hostname();
@@ -324,10 +326,12 @@ function runUpdater() {
 
 
 
-// send error data to web interface 
+// send error data to web interface
+let failRetryCount = 0;
 function server_handleError(err) {
     let errorStats = {
         error: err.message,
+        tries: failRetryCount,
         timestamp: Date.now(),
     };
     if(err.message == 'Port Not Open') {
@@ -344,6 +348,12 @@ function server_handleError(err) {
     deviceState.update({ 
         modbus_errorList: modbusErrList
     });
+
+    if(!deviceState.state.drive_modbusStatus && !deviceState.state.plc_modbusStatus) {
+        failRetryCount += 1;
+    } else { failRetryCount = 0 }
+
+    if(failRetryCount > 300) exec("reboot");
 }
 
 
