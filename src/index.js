@@ -250,7 +250,7 @@ function runUpdater() {
             if(success) {
                 // send mq diff
                 const punchDiff = success[3] - deviceState.get().drive_punchCountDisplay;
-                mq_publish("DB_PUNCH_DIFF", punchDiff>0?punchDiff:0);
+                if(punchDiff>0) mq_publish("DB_PUNCH_DIFF", punchDiff);
                 // update state
                 deviceState.update({
                     drive_feedLength            : success[0],
