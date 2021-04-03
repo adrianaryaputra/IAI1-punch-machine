@@ -328,7 +328,6 @@ function runUpdater() {
 function server_handleError(err) {
     let errorStats = {
         error: err.message,
-        tries: failRetryCount,
         timestamp: Date.now(),
     };
     if(err.message == 'Port Not Open') {
