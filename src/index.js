@@ -53,7 +53,6 @@ let plc = new ModbusDevice_FX3U({
 
 
 
-
 // execute this
 runModbus();
 runWS();
@@ -65,18 +64,19 @@ setTimeout(() => runUpdater(), 1000);
 
 async function runModbus() {
     try {
+        modbusRunning = true;
         console.log("connecting to modbus ...");
         let serialList = (await SerialPort.list()).filter(s => s.manufacturer === cfg.MODBUS_SERIALNAME);
         if(serialList.length == 1) {
             let modbusPort = new SerialPort(serialList[0].path, {autoOpen: false, baudRate: cfg.MODBUS_BAUD, stopBits: cfg.MODBUS_STOPBIT});
             modbusHandler.setConnection(modbusPort).open(() => {
-                console.log("modbus port open");
+                console.log("modbus port open", modbusHandler);
             });
         }
         else throw Error(`there are ${serialList.length} serial selected, it should be 1.`)
     } catch(e) {
         server_handleError(e);
-        setTimeout(() => runModbus(), 5000); 
+        server_handleError(Error('Port Not Open'));
     }
 }
 
@@ -336,7 +336,7 @@ function server_handleError(err) {
         deviceState.update({ plc_modbusStatus: false });
         // close connection and reconnect
         modbusHandler.close();
-        runModbus();
+        setTimeout(() => runModbus(), 5000);
     }
     let modbusError = deviceState.state.modbus_errorList || []
     let modbusErrList = modbusError.slice(0,9);
