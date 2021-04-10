@@ -167,6 +167,12 @@ function generateGUI() {
                 regParser: /^[0-9]+$/,
                 value: [0],
                 sideButton: countReset.element(),
+            }, {
+                id: "scount",
+                label: "Server Count",
+                type: "text",
+                regParser: /^[0-9]+$/,
+                value: [0],
             },
         ]
     });
@@ -178,12 +184,12 @@ function generateGUI() {
         }
     });
 
-    let textStatus = document.createElement('h3');
-    textStatus.textContent = "Status";
-    textStatus.style.color = "#FFF";
-    textStatus.style.width = "100%";
-    textStatus.style.textAlign = "center";
-    holderStatus.element().appendChild(textStatus);
+    // let textStatus = document.createElement('h3');
+    // textStatus.textContent = "Status";
+    // textStatus.style.color = "#FFF";
+    // textStatus.style.width = "100%";
+    // textStatus.style.textAlign = "center";
+    // holderStatus.element().appendChild(textStatus);
 
     let holderModbusStatus = new Holder({
         parent: holderStatus.element(),
@@ -198,7 +204,7 @@ function generateGUI() {
     let holderIndicator = new Holder({
         parent: holderStatus.element(),
         style: {
-            padding: ".5rem 0 0 0",
+            padding: "0",
             display: "grid",
             gridTemplateColumns: "repeat(4, minmax(3rem, 1fr))",
             gap: "1em",
@@ -232,17 +238,17 @@ function generateGUI() {
         }
     });
 
-    let textControl = document.createElement('h3');
-    textControl.textContent = "Control";
-    textControl.style.color = "#FFF";
-    textControl.style.width = "100%";
-    textControl.style.textAlign = "center";
-    holderControl.element().appendChild(textControl);
+    // let textControl = document.createElement('h3');
+    // textControl.textContent = "Control";
+    // textControl.style.color = "#FFF";
+    // textControl.style.width = "100%";
+    // textControl.style.textAlign = "center";
+    // holderControl.element().appendChild(textControl);
 
     let holderContactor = new Holder({
         parent: holderControl.element(),
         style: {
-            padding: "1em 0 0 0",
+            padding: "0",
             display: "grid",
             width: "100%",
             gridTemplateColumns: "repeat(4, minmax(3rem, 1fr))",
@@ -447,7 +453,6 @@ function generateGUI() {
     pubsub.subscribe(WS.DRIVE_SET_LENGTH, (msg) => formLen.set({length: [msg]}));
     pubsub.subscribe(WS.DRIVE_SET_SPEED, (msg) => formLen.set({speed: [msg]}));
     pubsub.subscribe(WS.DRIVE_SET_COUNTER_CV, (msg) => formLen.set({count: [msg]}));
-    pubsub.subscribe(WS.DRIVE_SET_COUNTER_PV, (msg) => formLen.set({pcount: [msg]}));
 
     pubsub.subscribe(WS.DRIVE_SET_THREAD_FORWARD, (msg) => buttonThreadFwd.active(msg));
     pubsub.subscribe(WS.DRIVE_SET_THREAD_REVERSE, (msg) => buttonThreadRev.active(msg));
@@ -461,6 +466,8 @@ function generateGUI() {
     pubsub.subscribe(WS.STATS_NAMA_PELANGGAN, (msg) => formLen.set({statsnama: [msg]}));
     pubsub.subscribe(WS.STATS_UKURAN_BAHAN, (msg) => formLen.set({statsdiameter: [msg]}));
     pubsub.subscribe(WS.STATS_TEBAL_BAHAN, (msg) => formLen.set({statstebal: [msg]}));
+    pubsub.subscribe(WS.STATS_COUNTER, (msg) => formLen.set({scount: [msg]}));
+
 
     pubsub.subscribe(WS.PLC_GET_STATE_Y, (y) => {
         buttonUncoiler.enable(true);

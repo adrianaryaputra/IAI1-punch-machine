@@ -110,7 +110,7 @@ export class InputElement{
 
         if(this.parent) this.parent.appendChild(this.elem.label);
         this.elem.input.forEach(element => {
-            if(!this.isEditable) element.setAttribute("disabled","true");
+            if(!this.isEditable) element.setAttribute("readOnly","true");
             if(this.inputListener) element.addEventListener("change", this.inputListener);
             if(this.focusListener) element.addEventListener("focus", this.focusListener);
             if(this.blurListener) element.addEventListener("blur", this.blurListener);
