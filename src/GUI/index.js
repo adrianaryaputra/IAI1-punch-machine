@@ -34,7 +34,7 @@ function generateGUI() {
             console.log(formLen.get("statsnama"), formLen.parse("statsnama"));
             if(formLen.parse("statsnama")){
                 lenSubmit.enable(false);
-                ws_send("STATS_NAMA_PELANGGAN", formLen.get("statsnama"));
+                ws_send(WS.STATS_NAMA_PELANGGAN, formLen.get("statsnama"));
             }
         }
     });
@@ -48,7 +48,7 @@ function generateGUI() {
             console.log(formLen.get("statstebal"), formLen.parse("statstebal"));
             if(formLen.parse("statstebal")){
                 lenSubmit.enable(false);
-                ws_send("STATS_TEBAL_BAHAN", formLen.get("statstebal"));
+                ws_send(WS.STATS_TEBAL_BAHAN, formLen.get("statstebal"));
             }
         }
     });
@@ -62,7 +62,7 @@ function generateGUI() {
             console.log(formLen.get("statsdiameter"), formLen.parse("statsdiameter"));
             if(formLen.parse("statsdiameter")){
                 lenSubmit.enable(false);
-                ws_send("STATS_DIAMETER_PON", formLen.get("statsdiameter"));
+                ws_send(WS.STATS_DIAMETER_PON, formLen.get("statsdiameter"));
             }
         }
     });
