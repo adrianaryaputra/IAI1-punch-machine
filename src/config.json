@@ -49,6 +49,12 @@
         "PLC_STATE_X"                     : "PLC_STATE_X",
         "PLC_STATE_Y"                     : "PLC_STATE_Y",
         "PLC_MODBUS_STATS"                : "PLC_MODBUS_STATS",
+
+        "STATS_NAMA_PELANGGAN"            : "STATS_NAMA_PELANGGAN",
+        "STATS_TEBAL_BAHAN"               : "STATS_TEBAL_BAHAN",
+        "STATS_DIAMETER_PON"              : "STATS_DIAMETER_PON",
+        "STATS_COUNTER"                   : "STATS_COUNTER",
+        "STATS_PUNCHING"                  : "STATS_PUNCHING",
     
         "MODBUS_ERRORS"                   : "MODBUS_ERRORS"
     }

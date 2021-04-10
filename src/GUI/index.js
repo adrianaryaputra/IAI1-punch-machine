@@ -19,11 +19,53 @@ function generateGUI() {
     });
 
     let buttonStyle = {
-        fontSize: "2rem",
+        fontSize: "1.7rem",
         textAlign: "center",
-        padding: "1rem",
+        padding: ".75rem",
         width: "100%",
     }
+
+    let statsNamaSubmit = new ClickableButton({
+        text: "Submit",
+        color: "#0f0",
+        isEnable: false,
+        style: buttonStyle,
+        callback: () => {
+            console.log(formLen.get("statsnama"), formLen.parse("statsnama"));
+            if(formLen.parse("statsnama")){
+                lenSubmit.enable(false);
+                ws_send("STATS_NAMA_PELANGGAN", formLen.get("statsnama"));
+            }
+        }
+    });
+
+    let statsTebalSubmit = new ClickableButton({
+        text: "Submit",
+        color: "#0f0",
+        isEnable: false,
+        style: buttonStyle,
+        callback: () => {
+            console.log(formLen.get("statstebal"), formLen.parse("statstebal"));
+            if(formLen.parse("statstebal")){
+                lenSubmit.enable(false);
+                ws_send("STATS_TEBAL_BAHAN", formLen.get("statstebal"));
+            }
+        }
+    });
+
+    let statsDiameterSubmit = new ClickableButton({
+        text: "Submit",
+        color: "#0f0",
+        isEnable: false,
+        style: buttonStyle,
+        callback: () => {
+            console.log(formLen.get("statsdiameter"), formLen.parse("statsdiameter"));
+            if(formLen.parse("statsdiameter")){
+                lenSubmit.enable(false);
+                ws_send("STATS_DIAMETER_PON", formLen.get("statsdiameter"));
+            }
+        }
+    });
 
     let lenSubmit = new ClickableButton({
         text: "Submit",
@@ -35,20 +77,6 @@ function generateGUI() {
             if(formLen.parse("length")){
                 lenSubmit.enable(false);
                 ws_send(WS.DRIVE_SET_LENGTH, formLen.get("length"));
-            }
-        }
-    });
-
-    let feedLenSubmit = new ClickableButton({
-        text: "Submit",
-        color: "#0f0",
-        isEnable: false,
-        style: buttonStyle,
-        callback: () => {
-            console.log(formLen.get("feedLength"), formLen.parse("feedLength"));
-            if(formLen.parse("feedLength")){
-                feedLenSubmit.enable(false);
-                formLen.set({length: [formLen.get("feedLength")]});
             }
         }
     });
@@ -76,22 +104,43 @@ function generateGUI() {
         }
     });
 
-    let countPreset = new ClickableButton({
-        text: "Preset Count",
-        color: "#0f0",
-        style: buttonStyle,
-        callback: () => {
-            ws_send(WS.DRIVE_SET_COUNTER_PV, formLen.get("pcount"));
-        }
-    });
-
     let formLen = new FormElement({
         parent: holderForm.element(),
         style: {
-            gap: "1em",
+            gap: ".75em",
         },
         configs: [
             {
+                id: "statsnama",
+                label: "Nama Pelanggan",
+                placeholder: "Nama",
+                type: "text",
+                regParser: /^[\w]+$/,
+                sideButton: statsNamaSubmit.element(),
+                blurListener: () => {
+                    statsNamaSubmit.enable(formLen.parse("statsnama"));
+                }
+            }, {
+                id: "statstebal",
+                label: "Tebal (μm)",
+                placeholder: "000",
+                type: "text",
+                regParser: /^[\w]+$/,
+                sideButton: statsTebalSubmit.element(),
+                blurListener: () => {
+                    statsTebalSubmit.enable(formLen.parse("statstebal"));
+                }
+            }, {
+                id: "statsdiameter",
+                label: "Diameter (mm)",
+                placeholder: "000",
+                type: "text",
+                regParser: /^[\w]+$/,
+                sideButton: statsDiameterSubmit.element(),
+                blurListener: () => {
+                    statsDiameterSubmit.enable(formLen.parse("statsdiameter"));
+                }
+            }, {
                 id: "length",
                 label: "Length (mm)",
                 placeholder: "000",
@@ -99,18 +148,7 @@ function generateGUI() {
                 regParser: /^[0-9]+$/,
                 sideButton: lenSubmit.element(),
                 blurListener: () => {
-                    formLen.set({feedLength: [formLen.get("length")]});
                     lenSubmit.enable(formLen.parse("length"));
-                }
-            }, {
-                id: "feedLength",
-                label: "Feed Length (mm)",
-                placeholder: "000",
-                type: "text",
-                regParser: /^[0-9]+$/,
-                sideButton: feedLenSubmit.element(),
-                blurListener: () => {
-                    feedLenSubmit.enable(formLen.parse("feedLength"));
                 }
             }, {
                 id: "speed",
@@ -129,14 +167,7 @@ function generateGUI() {
                 regParser: /^[0-9]+$/,
                 value: [0],
                 sideButton: countReset.element(),
-            }, {
-                id: "pcount",
-                label: "Preset Count",
-                type: "text",
-                regParser: /^[0-9]+$/,
-                value: [0],
-                sideButton: countPreset.element(),
-            }
+            },
         ]
     });
 
@@ -157,7 +188,7 @@ function generateGUI() {
     let holderModbusStatus = new Holder({
         parent: holderStatus.element(),
         style: {
-            padding: "1em 0 0 0",
+            padding: ".5em 0 0 0",
             display: "grid",
             gridTemplateColumns: "repeat(2, minmax(3rem, 1fr))",
             gap: "1em",
@@ -167,7 +198,7 @@ function generateGUI() {
     let holderIndicator = new Holder({
         parent: holderStatus.element(),
         style: {
-            padding: "1rem 0 0 0",
+            padding: ".5rem 0 0 0",
             display: "grid",
             gridTemplateColumns: "repeat(4, minmax(3rem, 1fr))",
             gap: "1em",
@@ -175,8 +206,8 @@ function generateGUI() {
     });
 
     let indicatorStyle = {
-        padding: "1rem",
-        fontSize: "3rem",
+        padding: ".75rem",
+        fontSize: "2rem",
         color: "black",
         borderRadius: ".5rem",
         textAlign: "center",
@@ -354,7 +385,7 @@ function generateGUI() {
     const inputList = document.querySelectorAll("input[type=text]");
     inputList.forEach(i => {
         i.classList.add("virtual-keyboard")
-        i.setAttribute("data-kioskboard-type", "numpad")
+        i.setAttribute("data-kioskboard-type", "all")
     })
 
     KioskBoard.Init({
@@ -413,7 +444,7 @@ function generateGUI() {
 
 
     // pubsub
-    pubsub.subscribe(WS.DRIVE_SET_LENGTH, (msg) => formLen.set({length: [msg], feedLength: [msg]}));
+    pubsub.subscribe(WS.DRIVE_SET_LENGTH, (msg) => formLen.set({length: [msg]}));
     pubsub.subscribe(WS.DRIVE_SET_SPEED, (msg) => formLen.set({speed: [msg]}));
     pubsub.subscribe(WS.DRIVE_SET_COUNTER_CV, (msg) => formLen.set({count: [msg]}));
     pubsub.subscribe(WS.DRIVE_SET_COUNTER_PV, (msg) => formLen.set({pcount: [msg]}));
@@ -426,6 +457,10 @@ function generateGUI() {
     
     pubsub.subscribe(WS.PLC_GET_TRIP_FLAG, (msg) => buttonTrip.warn(!msg));
     pubsub.subscribe(WS.DRIVE_GET_TRIP_FLAG, (msg) => buttonTrip.warn(!msg));
+
+    pubsub.subscribe(WS.STATS_NAMA_PELANGGAN, (msg) => formLen.set({statsnama: [msg]}));
+    pubsub.subscribe(WS.STATS_DIAMETER_PON, (msg) => formLen.set({statsdiameter: [msg]}));
+    pubsub.subscribe(WS.STATS_TEBAL_BAHAN, (msg) => formLen.set({statstebal: [msg]}));
 
     pubsub.subscribe(WS.PLC_GET_STATE_Y, (y) => {
         buttonUncoiler.enable(true);
@@ -527,6 +562,12 @@ const WS = {
     PLC_GET_STATE_Y                     : "PLC_STATE_Y",
     PLC_GET_MODBUS_STATS                : "PLC_MODBUS_STATS",
 
+    STATS_NAMA_PELANGGAN                : "STATS_NAMA_PELANGGAN",
+    STATS_TEBAL_BAHAN                   : "STATS_TEBAL_BAHAN",
+    STATS_DIAMETER_PON                  : "STATS_DIAMETER_PON",
+    STATS_COUNTER                       : "STATS_COUNTER",
+    STATS_PUNCHING                      : "STATS_PUNCHING",
+
     MODBUS_ERROR_LIST                   : "MODBUS_ERRORS",
 }
 
@@ -552,6 +593,12 @@ const MAP_STATE_WS = {
     plc_state_y                 : WS.PLC_GET_STATE_Y,
     plc_tripStatus              : WS.PLC_GET_TRIP_FLAG,
     plc_modbusStatus            : WS.PLC_GET_MODBUS_STATS,
+
+    STATS_NAMA_PELANGGAN        : "STATS_NAMA_PELANGGAN",
+    STATS_TEBAL_BAHAN           : "STATS_TEBAL_BAHAN",
+    STATS_DIAMETER_PON          : "STATS_DIAMETER_PON",
+    STATS_COUNTER               : "STATS_COUNTER",
+    STATS_PUNCHING              : "STATS_PUNCHING",
 
     modbus_errorList            : WS.MODBUS_ERROR_LIST,
 }

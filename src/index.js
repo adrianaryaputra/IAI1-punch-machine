@@ -54,10 +54,10 @@ let plc = new ModbusDevice_FX3U({
 
 
 // execute this
+let updaterRunning = false;
 runModbus();
 runWS();
 runMQ();
-setTimeout(() => runUpdater(), 1000);
 
 
 
@@ -70,6 +70,9 @@ async function runModbus() {
         if(serialList.length == 1) {
             let modbusPort = new SerialPort(serialList[0].path, {autoOpen: false, baudRate: cfg.MODBUS_BAUD, stopBits: cfg.MODBUS_STOPBIT});
             modbusHandler.setConnection(modbusPort).open(() => {
+                drive_resetCount(() => {
+                    if(!updaterRunning) { runUpdater(); updaterRunning = true; }
+                });
                 console.log("modbus port open", modbusHandler);
             });
         }
@@ -78,6 +81,19 @@ async function runModbus() {
         server_handleError(e);
         server_handleError(Error('Port Not Open'));
     }
+}
+
+
+
+function drive_resetCount(cb = ()=>{}) {
+    drive.writeParameter({
+        ...ADDRESS[CMD.DRIVE_COUNTER_RESET],
+        value: 1,
+        callback: (e,s) => {
+            if(e) drive_resetCount();
+            if(s) cb();
+        }
+    });
 }
 
 
@@ -96,13 +112,23 @@ function runWS() {
 
 function runMQ() {
     mqclient.on("connect", () => {
-        mqclient.subscribe(`MP/${deviceName}/SERVER_STATE`);
+        mqclient.subscribe(`MP/${deviceName}/#`);
+        mq_publish("GET_STATE", true);
     });
     mqclient.on("message", (topic, message) => {
         const t = topic.split('/');
         console.log("receive:", t, message.toString());
         switch(t[2]) {
             case "SERVER_STATE":
+                if(Buffer.isBuffer(message)) message = JSON.parse(message.toString()).payload
+                console.log("SERVER_STATE", message);
+                for (const data in message) {
+                    deviceState.state[data] = message[data];
+                    ws_broadcast(data, message[data]);
+                }
+                break;
+            case CMD.STATS_COUNTER:
+                deviceState.update({[t[2]]: message});
                 break;
         }
     })
@@ -213,6 +239,14 @@ function ws_handleIncoming(client, command, value) {
                     }
                 });
                 break;
+            
+            case CMD.STATS_NAMA_PELANGGAN :
+            case CMD.STATS_TEBAL_BAHAN    :
+            case CMD.STATS_DIAMETER_PON   :
+                deviceState.update({
+                    [command]: value
+                });    
+                break;
         }
     } catch(e) {
         server_handleError(e);
@@ -249,6 +283,11 @@ function runUpdater() {
         ADDRESS.DRIVE_INDICATOR,
         (err, success) => {
             if(success) {
+                // send punch diff if diff > 0
+                let punchDiff = (success[3] - deviceState.state.drive_punchCountDisplay);
+                punchDiff > 0 ? punchDiff : 0;
+                if(punchDiff) mq_publish(CMD.STATS_PUNCHING, punchDiff);
+
                 // update state
                 deviceState.update({
                     drive_feedLength            : success[0],
@@ -355,9 +394,23 @@ function handleRestart() {
 
 
 // state-change callback to ws broadcast adapter
-function adapter_stateChange(cmd) {
+function ws_onStateChange(cmd) {
     return (cur) => {
-        console.log("STATE CHANGE: ", cmd);
+        console.log("STATE CHANGE [WS]: ", cmd);
+        ws_broadcast(cmd, cur);
+    }
+}
+
+function mq_onStateChange(cmd) {
+    return (cur) => {
+        console.log("STATE CHANGE [MQ]: ", cmd);
+        mq_publish(cmd, cur);
+    }
+}
+
+function wq_onStateChange(cmd) {
+    return (cur) => {
+        console.log("STATE CHANGE [WQ]: ", cmd);
         ws_broadcast(cmd, cur);
         mq_publish(cmd, cur);
     }
@@ -449,31 +502,36 @@ const MAP_WS_STATE = {
 
 // create data state object
 let deviceState = new DataState({
-    drive_feedLength            : adapter_stateChange(CMD.DRIVE_LENGTH),
-    drive_feedSpeed             : adapter_stateChange(CMD.DRIVE_SPEED),
-    drive_feedAcceleration      : adapter_stateChange(CMD.DRIVE_ACCELERATION_POSITION),
-    drive_feedDecceleration     : adapter_stateChange(CMD.DRIVE_DECCELERATION_POSITION),
-    drive_punchCountPreset      : adapter_stateChange(CMD.DRIVE_COUNTER_PV),
-    drive_punchCountDisplay     : adapter_stateChange(CMD.DRIVE_COUNTER_CV),
-    drive_distanceTurnMotor     : adapter_stateChange(CMD.DRIVE_DISTANCE_MOTOR_TURN),
-    drive_distanceTurnEncoder   : adapter_stateChange(CMD.DRIVE_DISTANCE_ENCODER_TURN),
-    drive_threadForwardFlag     : adapter_stateChange(CMD.DRIVE_THREAD_FORWARD),
-    drive_threadReverseFlag     : adapter_stateChange(CMD.DRIVE_THREAD_REVERSE),
-    drive_jogAcceleration       : adapter_stateChange(CMD.DRIVE_JOG_ACCELERATION),
-    drive_jogDecceleration      : adapter_stateChange(CMD.DRIVE_JOG_DECCELERATION),
-    drive_jogSpeed              : adapter_stateChange(CMD.DRIVE_JOG_SPEED),
-    drive_tripStatus            : adapter_stateChange(CMD.DRIVE_TRIP_FLAG),
-    drive_tripList              : adapter_stateChange(CMD.DRIVE_TRIP),
-    drive_tripSub               : adapter_stateChange(CMD.DRIVE_SUBTRIP),
-    drive_tripDate              : adapter_stateChange(CMD.DRIVE_TRIP_DATE),
-    drive_modbusStatus          : adapter_stateChange(CMD.DRIVE_MODBUS_STATS),
+    drive_feedLength            : ws_onStateChange(CMD.DRIVE_LENGTH),
+    drive_feedSpeed             : wq_onStateChange(CMD.DRIVE_SPEED),
+    drive_feedAcceleration      : ws_onStateChange(CMD.DRIVE_ACCELERATION_POSITION),
+    drive_feedDecceleration     : ws_onStateChange(CMD.DRIVE_DECCELERATION_POSITION),
+    drive_punchCountPreset      : ws_onStateChange(CMD.DRIVE_COUNTER_PV),
+    drive_punchCountDisplay     : ws_onStateChange(CMD.DRIVE_COUNTER_CV),
+    drive_distanceTurnMotor     : ws_onStateChange(CMD.DRIVE_DISTANCE_MOTOR_TURN),
+    drive_distanceTurnEncoder   : ws_onStateChange(CMD.DRIVE_DISTANCE_ENCODER_TURN),
+    drive_threadForwardFlag     : ws_onStateChange(CMD.DRIVE_THREAD_FORWARD),
+    drive_threadReverseFlag     : ws_onStateChange(CMD.DRIVE_THREAD_REVERSE),
+    drive_jogAcceleration       : ws_onStateChange(CMD.DRIVE_JOG_ACCELERATION),
+    drive_jogDecceleration      : ws_onStateChange(CMD.DRIVE_JOG_DECCELERATION),
+    drive_jogSpeed              : ws_onStateChange(CMD.DRIVE_JOG_SPEED),
+    drive_tripStatus            : ws_onStateChange(CMD.DRIVE_TRIP_FLAG),
+    drive_tripList              : ws_onStateChange(CMD.DRIVE_TRIP),
+    drive_tripSub               : ws_onStateChange(CMD.DRIVE_SUBTRIP),
+    drive_tripDate              : ws_onStateChange(CMD.DRIVE_TRIP_DATE),
+    drive_modbusStatus          : ws_onStateChange(CMD.DRIVE_MODBUS_STATS),
 
-    plc_state_x                 : adapter_stateChange(CMD.PLC_STATE_X),
-    plc_state_y                 : adapter_stateChange(CMD.PLC_STATE_Y),
-    plc_tripStatus              : adapter_stateChange(CMD.PLC_TRIP_FLAG),
-    plc_modbusStatus            : adapter_stateChange(CMD.PLC_MODBUS_STATS),
+    plc_state_x                 : ws_onStateChange(CMD.PLC_STATE_X),
+    plc_state_y                 : ws_onStateChange(CMD.PLC_STATE_Y),
+    plc_tripStatus              : ws_onStateChange(CMD.PLC_TRIP_FLAG),
+    plc_modbusStatus            : ws_onStateChange(CMD.PLC_MODBUS_STATS),
 
-    modbus_errorList            : adapter_stateChange(CMD.MODBUS_ERRORS),
+    modbus_errorList            : ws_onStateChange(CMD.MODBUS_ERRORS),
+
+    [CMD.STATS_NAMA_PELANGGAN]  : wq_onStateChange(CMD.STATS_NAMA_PELANGGAN),
+    [CMD.STATS_TEBAL_BAHAN]     : wq_onStateChange(CMD.STATS_TEBAL_BAHAN),
+    [CMD.STATS_DIAMETER_PON]    : wq_onStateChange(CMD.STATS_DIAMETER_PON),
+    [CMD.STATS_COUNTER]         : ws_onStateChange(CMD.STATS_COUNTER),
 });
 
 
