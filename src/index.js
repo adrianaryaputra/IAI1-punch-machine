@@ -507,7 +507,7 @@ let deviceState = new DataState({
     drive_feedAcceleration      : ws_onStateChange(CMD.DRIVE_ACCELERATION_POSITION),
     drive_feedDecceleration     : ws_onStateChange(CMD.DRIVE_DECCELERATION_POSITION),
     drive_punchCountPreset      : ws_onStateChange(CMD.DRIVE_COUNTER_PV),
-    drive_punchCountDisplay     : ws_onStateChange(CMD.DRIVE_COUNTER_CV),
+    drive_punchCountDisplay     : wq_onStateChange(CMD.DRIVE_COUNTER_CV),
     drive_distanceTurnMotor     : ws_onStateChange(CMD.DRIVE_DISTANCE_MOTOR_TURN),
     drive_distanceTurnEncoder   : ws_onStateChange(CMD.DRIVE_DISTANCE_ENCODER_TURN),
     drive_threadForwardFlag     : ws_onStateChange(CMD.DRIVE_THREAD_FORWARD),
