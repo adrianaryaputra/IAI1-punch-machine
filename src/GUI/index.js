@@ -564,7 +564,7 @@ const WS = {
 
     STATS_NAMA_PELANGGAN                : "STATS_NAMA_PELANGGAN",
     STATS_TEBAL_BAHAN                   : "STATS_TEBAL_BAHAN",
-    STATS_DIAMETER_PON                  : "STATS_DIAMETER_PON",
+    STATS_DIAMETER_PON                  : "STATS_UKURAN_BAHAN",
     STATS_COUNTER                       : "STATS_COUNTER",
     STATS_PUNCHING                      : "STATS_PUNCHING",
 
