@@ -62,7 +62,7 @@ function generateGUI() {
             console.log(formLen.get("statsdiameter"), formLen.parse("statsdiameter"));
             if(formLen.parse("statsdiameter")){
                 lenSubmit.enable(false);
-                ws_send(WS.STATS_DIAMETER_PON, formLen.get("statsdiameter"));
+                ws_send(WS.STATS_UKURAN_BAHAN, formLen.get("statsdiameter"));
             }
         }
     });
@@ -459,7 +459,7 @@ function generateGUI() {
     pubsub.subscribe(WS.DRIVE_GET_TRIP_FLAG, (msg) => buttonTrip.warn(!msg));
 
     pubsub.subscribe(WS.STATS_NAMA_PELANGGAN, (msg) => formLen.set({statsnama: [msg]}));
-    pubsub.subscribe(WS.STATS_DIAMETER_PON, (msg) => formLen.set({statsdiameter: [msg]}));
+    pubsub.subscribe(WS.STATS_UKURAN_BAHAN, (msg) => formLen.set({statsdiameter: [msg]}));
     pubsub.subscribe(WS.STATS_TEBAL_BAHAN, (msg) => formLen.set({statstebal: [msg]}));
 
     pubsub.subscribe(WS.PLC_GET_STATE_Y, (y) => {
@@ -564,7 +564,7 @@ const WS = {
 
     STATS_NAMA_PELANGGAN                : "STATS_NAMA_PELANGGAN",
     STATS_TEBAL_BAHAN                   : "STATS_TEBAL_BAHAN",
-    STATS_DIAMETER_PON                  : "STATS_UKURAN_BAHAN",
+    STATS_UKURAN_BAHAN                  : "STATS_UKURAN_BAHAN",
     STATS_COUNTER                       : "STATS_COUNTER",
     STATS_PUNCHING                      : "STATS_PUNCHING",
 
@@ -596,7 +596,7 @@ const MAP_STATE_WS = {
 
     STATS_NAMA_PELANGGAN        : "STATS_NAMA_PELANGGAN",
     STATS_TEBAL_BAHAN           : "STATS_TEBAL_BAHAN",
-    STATS_DIAMETER_PON          : "STATS_UKURAN_BAHAN",
+    STATS_UKURAN_BAHAN          : "STATS_UKURAN_BAHAN",
     STATS_COUNTER               : "STATS_COUNTER",
     STATS_PUNCHING              : "STATS_PUNCHING",
 
