@@ -86,14 +86,15 @@ async function runModbus() {
 
 
 function drive_resetCount(cb = ()=>{}) {
-    drive.writeParameter({
-        ...ADDRESS[CMD.DRIVE_COUNTER_RESET],
-        value: 1,
-        callback: (e,s) => {
-            if(e) drive_resetCount();
-            if(s) cb();
-        }
-    });
+    // drive.writeParameter({
+    //     ...ADDRESS[CMD.DRIVE_COUNTER_RESET],
+    //     value: 1,
+    //     callback: (e,s) => {
+    //         if(e) drive_resetCount();
+    //         if(s) cb();
+    //     }
+    // });
+    cb();
 }
 
 
