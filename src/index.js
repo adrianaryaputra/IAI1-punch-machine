@@ -129,6 +129,7 @@ function runMQ() {
                 }
                 break;
             case CMD.STATS_COUNTER:
+                if(Buffer.isBuffer(message)) message = JSON.parse(message.toString()).payload
                 deviceState.update({[t[2]]: message});
                 break;
         }
